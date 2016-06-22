@@ -32,9 +32,9 @@ class Utils
             throw new ClientException('load private key failed, key file path may be wrong');
         }
         $rsa = new RSA();
-        $load_key_success = $rsa->loadKey($key, RSA::PRIVATE_FORMAT_PKCS1);
+        $load_key_success = $rsa->loadKey($key);
         if (!$load_key_success) {
-            throw new ClientException('load private key failed, private key format may be not pcks1');
+            throw new ClientException('load private key failed, private key format may be invalid');
         }
         $rsa->setSignatureMode(RSA::ENCRYPTION_PKCS1);
         $rsa->setHash('sha256');

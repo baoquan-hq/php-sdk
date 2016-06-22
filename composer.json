@@ -1,9 +1,33 @@
 {
+  "name": "baoquan/eagle-php-sdk",
+  "type": "library",
+  "description": "sdk for members to use the service of baoquan.com ",
+  "keywords": ["baoquan","sdk"],
+  "homepage": "https://baoquan.com",
+  "license": "gpl-3.0",
+  "authors": [
+    {
+      "name": "lihao",
+      "email": "lih@baoquan.com",
+      "homepage": "https://baoquan.com",
+      "role": "Developer"
+    }
+  ],
   "require": {
     "guzzlehttp/guzzle": "6.2.0",
     "phpseclib/phpseclib": "2.0.0"
   },
   "require-dev": {
     "phpunit/phpunit": "5.2.9"
+  },
+  "autoload": {
+    "psr-4": {
+      "com\\baoquan\\sdk\\": "src/main"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "com\\baoquan\\sdk\\": "src/test"
+    }
   }
 }

@@ -11,7 +11,14 @@ namespace com\baoquan\sdk;
 
 use com\baoquan\sdk\exception\ClientException;
 use com\baoquan\sdk\exception\ServerException;
+use com\baoquan\sdk\pojo\payload\AddFactoidsPayload;
+use com\baoquan\sdk\pojo\payload\ApplyCaPayload;
+use com\baoquan\sdk\pojo\payload\Attachment;
+use com\baoquan\sdk\pojo\payload\AttestationPayload;
+use com\baoquan\sdk\pojo\payload\CaType;
 use com\baoquan\sdk\pojo\payload\CreateAttestationPayload;
+use com\baoquan\sdk\pojo\response\AddFactoidsResponse;
+use com\baoquan\sdk\pojo\response\ApplyCaResponse;
 use com\baoquan\sdk\pojo\response\BaseResponse;
 use com\baoquan\sdk\pojo\response\CreateAttestationResponse;
 use com\baoquan\sdk\util\Utils;
@@ -122,7 +129,7 @@ class BaoquanClient
      * create attestation with attachments, one factoid can have more than one attachments
      * @param CreateAttestationPayload $payload
      * @param array $attachments
-     * @return CreateAttestationResponse $response
+     * @return CreateAttestationResponse
      */
     public function createAttestation(CreateAttestationPayload $payload, $attachments = null) {
         $this->checkCreateAttestationPayload($payload);
@@ -134,21 +141,123 @@ class BaoquanClient
     }
 
     /**
+     * add factoids to attestation with attachments, one factoid can have more than one attachments
+     * @param AddFactoidsPayload $payload
+     * @param array $attachments
+     * @return AddFactoidsResponse
+     */
+    public function addFactoids(AddFactoidsPayload $payload, $attachments = null) {
+        $this->checkAddFactoidsPayload($payload);
+        $payload_map = $this->buildAddFactoidsPayloadMap($payload, $attachments);
+        $stream_body_map = $this->buildStreamBodyMap($attachments);
+        $response = new AddFactoidsResponse();
+        $this->post('factoids', $payload_map, $stream_body_map, $response);
+        return $response;
+    }
+
+    /**
+     * apply ca
+     * @param ApplyCaPayload $payload
+     * @param Attachment $seal
+     * @return ApplyCaResponse
+     */
+    public function applyCa(ApplyCaPayload $payload, Attachment $seal) {
+        $this->checkApplyCaPayload($payload);
+        if ($payload->getType() == CaType::ENTERPRISE) {
+            $this->checkSeal($seal);
+        }
+        $payload_map = $this->buildApplyCaPayloadMap($payload);
+        $stream_body_map = null;
+        if ($seal != null) {
+            $stream_body_map['seal'] = $seal;
+        }
+        $response = new ApplyCaResponse();
+        $this->post('cas', $payload_map, $stream_body_map, $response);
+        return $response;
+    }
+
+    /**
      * @param CreateAttestationPayload $payload
-     * @throws \InvalidArgumentException
      */
     private function checkCreateAttestationPayload(CreateAttestationPayload $payload) {
         if (is_null($payload)) {
-            throw new \InvalidArgumentException("payload can not be null");
+            throw new \InvalidArgumentException('payload can not be null');
         }
         if (empty($payload->getTemplateId())) {
-            throw new \InvalidArgumentException("payload.templateId can not be empty");
+            throw new \InvalidArgumentException('payload.templateId can not be empty');
         }
         if (empty($payload->getIdentities())) {
-            throw new \InvalidArgumentException("payload.identities can not be empty");
+            throw new \InvalidArgumentException('payload.identities can not be empty');
         }
         if (empty($payload->getFactoids())) {
-            throw new \InvalidArgumentException("payload.factoids can not be empty");
+            throw new \InvalidArgumentException('payload.factoids can not be empty');
+        }
+    }
+
+    /**
+     * @param AddFactoidsPayload $payload
+     */
+    private function checkAddFactoidsPayload(AddFactoidsPayload $payload) {
+        if (is_null($payload)) {
+            throw new \InvalidArgumentException('payload can not be null');
+        }
+        if (empty($payload->getAno())) {
+            throw new \InvalidArgumentException('payload.ano can not be empty');
+        }
+        if (empty($payload->getFactoids())) {
+            throw new \InvalidArgumentException('payload.factoids can not be empty');
+        }
+    }
+
+    /**
+     * @param ApplyCaPayload $payload
+     */
+    private function checkApplyCaPayload(ApplyCaPayload $payload) {
+        if (is_null($payload)) {
+            throw new \InvalidArgumentException('payload can not be null');
+        }
+        if (empty($payload->getType())) {
+            throw new \InvalidArgumentException('payload.type can not be null');
+        }
+        if ($payload->getType() == CaType::ENTERPRISE) {
+            if (empty($payload->getName())) {
+                throw new \InvalidArgumentException('payload.name can not be null');
+            }
+            if (empty($payload->getIcCode())) {
+                throw new \InvalidArgumentException('payload.ic_code can not be null');
+            }
+            if (empty($payload->getOrgCode())) {
+                throw new \InvalidArgumentException('payload.org_code can not be null');
+            }
+            if (empty($payload->getTaxCode())) {
+                throw new \InvalidArgumentException('payload.tax_code can not be null');
+            }
+        }
+        if (empty($payload->getLinkName())) {
+            throw new \InvalidArgumentException('payload.link_name can not be null');
+        }
+        if (empty($payload->getLinkIdCard())) {
+            throw new \InvalidArgumentException('payload.link_id_card can not be null');
+        }
+        if (empty($payload->getLinkPhone())) {
+            throw new \InvalidArgumentException('payload.link_phone can not be null');
+        }
+        if (empty($payload->getLinkEmail())) {
+            throw new \InvalidArgumentException('payload.link_email can not be null');
+        }
+    }
+
+    private function checkSeal(Attachment $seal) {
+        if (is_null($seal)) {
+            throw new \InvalidArgumentException('seal can not be null when ca type is enterprise');
+        }
+        $filename = $seal->getResourceName();
+        if (strpos($filename, '.') === false) {
+            throw new \InvalidArgumentException('seal file name must be like xxx.png or xxx.jpg');
+        }
+        $file_type = substr($filename, strpos($filename, '.') + 1);
+        if ($file_type != 'jpg' && $file_type != 'png') {
+            throw new \InvalidArgumentException('seal file name extension must be png or jpg');
         }
     }
 
@@ -168,11 +277,39 @@ class BaoquanClient
     }
 
     /**
-     * @param CreateAttestationPayload $payload
+     * @param AddFactoidsPayload $payload
      * @param array $attachments
      * @return array
      */
-    private function buildChecksum(CreateAttestationPayload $payload, $attachments) {
+    private function buildAddFactoidsPayloadMap(AddFactoidsPayload $payload, $attachments) {
+        $payload_map = [];
+        $payload_map['ano'] = $payload->getAno();
+        $payload_map['factoids'] = $payload->getFactoids();
+        $payload_map['completed'] = $payload->getCompleted();
+        $payload_map['attachments'] = $this->buildChecksum($payload, $attachments);
+        return $payload_map;
+    }
+
+    private function buildApplyCaPayloadMap(ApplyCaPayload $payload) {
+        $payload_map = [];
+        $payload_map['type'] = $payload->getType();
+        $payload_map['name'] = $payload->getName();
+        $payload_map['ic_code'] = $payload->getIcCode();
+        $payload_map['org_code'] = $payload->getOrgCode();
+        $payload_map['tax_code'] = $payload->getTaxCode();
+        $payload_map['link_name'] = $payload->getLinkName();
+        $payload_map['link_id_card'] = $payload->getLinkIdCard();
+        $payload_map['link_phone'] = $payload->getLinkPhone();
+        $payload_map['link_email'] = $payload->getLinkEmail();
+        return $payload_map;
+    }
+
+    /**
+     * @param AttestationPayload $payload
+     * @param array $attachments
+     * @return array
+     */
+    private function buildChecksum(AttestationPayload $payload, $attachments) {
         $payload_attachments = null;
         if (!empty($attachments)) {
             $signs = $payload->getSigns();
