@@ -129,6 +129,7 @@ class BaoquanClient
      * create attestation with attachments, one factoid can have more than one attachments
      * @param CreateAttestationPayload $payload
      * @param array $attachments
+     * @throws ServerException
      * @return CreateAttestationResponse
      */
     public function createAttestation(CreateAttestationPayload $payload, $attachments = null) {
@@ -144,6 +145,7 @@ class BaoquanClient
      * add factoids to attestation with attachments, one factoid can have more than one attachments
      * @param AddFactoidsPayload $payload
      * @param array $attachments
+     * @throws ServerException
      * @return AddFactoidsResponse
      */
     public function addFactoids(AddFactoidsPayload $payload, $attachments = null) {
@@ -159,9 +161,10 @@ class BaoquanClient
      * apply ca
      * @param ApplyCaPayload $payload
      * @param Attachment $seal
+     * @throws ServerException
      * @return ApplyCaResponse
      */
-    public function applyCa(ApplyCaPayload $payload, Attachment $seal) {
+    public function applyCa(ApplyCaPayload $payload, $seal = null) {
         $this->checkApplyCaPayload($payload);
         if ($payload->getType() == CaType::ENTERPRISE) {
             $this->checkSeal($seal);
@@ -169,7 +172,7 @@ class BaoquanClient
         $payload_map = $this->buildApplyCaPayloadMap($payload);
         $stream_body_map = null;
         if ($seal != null) {
-            $stream_body_map['seal'] = $seal;
+            $stream_body_map['seal'] = [$seal];
         }
         $response = new ApplyCaResponse();
         $this->post('cas', $payload_map, $stream_body_map, $response);
@@ -221,33 +224,36 @@ class BaoquanClient
         }
         if ($payload->getType() == CaType::ENTERPRISE) {
             if (empty($payload->getName())) {
-                throw new \InvalidArgumentException('payload.name can not be null');
+                throw new \InvalidArgumentException('payload.name can not be empty');
             }
             if (empty($payload->getIcCode())) {
-                throw new \InvalidArgumentException('payload.ic_code can not be null');
+                throw new \InvalidArgumentException('payload.ic_code can not be empty');
             }
             if (empty($payload->getOrgCode())) {
-                throw new \InvalidArgumentException('payload.org_code can not be null');
+                throw new \InvalidArgumentException('payload.org_code can not be empty');
             }
             if (empty($payload->getTaxCode())) {
-                throw new \InvalidArgumentException('payload.tax_code can not be null');
+                throw new \InvalidArgumentException('payload.tax_code can not be empty');
             }
         }
         if (empty($payload->getLinkName())) {
-            throw new \InvalidArgumentException('payload.link_name can not be null');
+            throw new \InvalidArgumentException('payload.link_name can not be empty');
         }
         if (empty($payload->getLinkIdCard())) {
-            throw new \InvalidArgumentException('payload.link_id_card can not be null');
+            throw new \InvalidArgumentException('payload.link_id_card can not be empty');
         }
         if (empty($payload->getLinkPhone())) {
-            throw new \InvalidArgumentException('payload.link_phone can not be null');
+            throw new \InvalidArgumentException('payload.link_phone can not be empty');
         }
         if (empty($payload->getLinkEmail())) {
-            throw new \InvalidArgumentException('payload.link_email can not be null');
+            throw new \InvalidArgumentException('payload.link_email can not be empty');
         }
     }
 
-    private function checkSeal(Attachment $seal) {
+    /**
+     * @param Attachment $seal
+     */
+    private function checkSeal($seal) {
         if (is_null($seal)) {
             throw new \InvalidArgumentException('seal can not be null when ca type is enterprise');
         }
@@ -312,22 +318,24 @@ class BaoquanClient
     private function buildChecksum(AttestationPayload $payload, $attachments) {
         $payload_attachments = null;
         if (!empty($attachments)) {
+            $payload_attachments = new \stdClass();
             $signs = $payload->getSigns();
             $factoids_count = count($payload->getFactoids());
             for($i = 0; $i < $factoids_count; $i++) {
-                $is = "".$i;
-                $i_attachments = $attachments[$is];
-                $i_signs = $signs[$is];
+                $i_attachments = $attachments[$i];
+                $i_signs = null;
+                if (!is_null($signs) && isset($signs[$i])) {
+                    $i_signs = $signs[$i];
+                }
                 if (!empty($i_attachments)) {
                     $objects = [];
                     $i_attachments_count = count($i_attachments);
                     for($j = 0; $j < $i_attachments_count; $j++) {
-                        $js = "".$j;
                         $j_attachment = $i_attachments[$j];
                         $checksum = Utils::checksum($j_attachment->getResource());
                         $j_signs = null;
-                        if (!is_null($i_signs)) {
-                            $j_signs = $i_signs[$js];
+                        if (!is_null($i_signs) && isset($i_signs[$j])) {
+                            $j_signs = $i_signs[$j];
                         }
                         if (is_null($j_signs)) {
                             $objects[] = $checksum;
@@ -338,7 +346,7 @@ class BaoquanClient
                             ];
                         }
                     }
-                    $payload_attachments[$is] = $objects;
+                    $payload_attachments->{''.$i} = $objects;
                 }
             }
         }
@@ -353,9 +361,7 @@ class BaoquanClient
         $multipart_files = [];
         if (!empty($attachments)) {
             foreach($attachments as $i => $file_list) {
-                foreach($file_list as $file) {
-                    $multipart_files[sprintf('attachments[%s][]', $i)] = $file;
-                }
+                $multipart_files[sprintf('attachments[%s][]', $i)] = $file_list;
             }
         }
         return $multipart_files;
@@ -369,10 +375,10 @@ class BaoquanClient
      * @throws ServerException
      */
     private function post($api_name, $payload, $attachments, BaseResponse $response) {
-        $path = sprintf("/api/%s/%s", $this->version, $api_name);
+        $path = sprintf('/api/%s/%s', $this->version, $api_name);
         $request_id = $this->request_id_generator->createRequestId();
         if (empty($request_id)) {
-            throw new ClientException("request id can not be empty");
+            throw new ClientException('request id can not be empty');
         }
         if (empty($this->access_key)) {
             throw new ClientException('accessKey can not be empty');
@@ -418,15 +424,17 @@ class BaoquanClient
             ],
         ];
         if (!empty($attachments)) {
-            foreach($attachments as $name=>$attachment) {
-                $multipart[] = [
-                    'name'=>$name,
-                    'contents'=>$attachment->getResource(),
-                    'filename'=>$attachment->getResourceName(),
-                    'headers'=>[
-                        'charset'=>'utf-8' // avoid chinese garbled
-                    ]
-                ];
+            foreach($attachments as $name=>$list) {
+                foreach($list as $attachment) {
+                    $multipart[] = [
+                        'name'=>$name,
+                        'contents'=>$attachment->getResource(),
+                        'filename'=>$attachment->getResourceName(),
+                        'headers'=>[
+                            'charset'=>'utf-8' // avoid chinese garbled
+                        ]
+                    ];
+                }
             }
         }
         $http_response = null;
@@ -444,7 +452,7 @@ class BaoquanClient
                 isset($contents['timestamp'])) {
                 throw new ServerException($request_id, $contents['message'], $contents['timestamp']);
             } else {
-                throw new ServerException($request_id, "Unknown error", time() * 1000);
+                throw new ServerException($request_id, 'Unknown error', time() * 1000);
             }
         } else {
             $response->parse($contents);

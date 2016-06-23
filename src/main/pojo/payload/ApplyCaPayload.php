@@ -30,7 +30,7 @@ class ApplyCaPayload
     private $link_email;
 
     /**
-     * @return CaType ca type
+     * @return string ca type
      */
     public function getType()
     {
@@ -38,7 +38,7 @@ class ApplyCaPayload
     }
 
     /**
-     * @param CaType $type
+     * @param string $type
      */
     public function setType($type)
     {
