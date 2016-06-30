@@ -11,16 +11,6 @@ namespace com\baoquan\sdk;
 
 use com\baoquan\sdk\exception\ClientException;
 use com\baoquan\sdk\exception\ServerException;
-use com\baoquan\sdk\pojo\payload\AddFactoidsPayload;
-use com\baoquan\sdk\pojo\payload\ApplyCaPayload;
-use com\baoquan\sdk\pojo\payload\Attachment;
-use com\baoquan\sdk\pojo\payload\AttestationPayload;
-use com\baoquan\sdk\pojo\payload\CaType;
-use com\baoquan\sdk\pojo\payload\CreateAttestationPayload;
-use com\baoquan\sdk\pojo\response\AddFactoidsResponse;
-use com\baoquan\sdk\pojo\response\ApplyCaResponse;
-use com\baoquan\sdk\pojo\response\BaseResponse;
-use com\baoquan\sdk\pojo\response\CreateAttestationResponse;
 use com\baoquan\sdk\util\Utils;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
@@ -36,6 +26,8 @@ class BaoquanClient
     private $request_id_generator;
 
     private $pem_path;
+
+    private $private_key_data;
 
     /**
      * @return string
@@ -117,7 +109,15 @@ class BaoquanClient
      */
     public function setPemPath($pem_path)
     {
+        if (empty($pem_path)) {
+            throw new \InvalidArgumentException('pem path can not be empty');
+        }
+        $key_data = file_get_contents($pem_path);
+        if ($key_data === false) {
+            throw new ClientException('load private key failed, key file path may be wrong');
+        }
         $this->pem_path = $pem_path;
+        $this->private_key_data = $key_data;
     }
 
     function __construct()
@@ -127,138 +127,131 @@ class BaoquanClient
 
     /**
      * create attestation with attachments, one factoid can have more than one attachments
-     * @param CreateAttestationPayload $payload
+     * @param array $payload
      * @param array $attachments
      * @throws ServerException
-     * @return CreateAttestationResponse
+     * @return array
      */
-    public function createAttestation(CreateAttestationPayload $payload, $attachments = null) {
+    public function createAttestation($payload, $attachments = null) {
         $this->checkCreateAttestationPayload($payload);
-        $payload_map = $this->buildCreateAttestationPayloadMap($payload, $attachments);
         $stream_body_map = $this->buildStreamBodyMap($attachments);
-        $response = new CreateAttestationResponse();
-        $this->post('attestations', $payload_map, $stream_body_map, $response);
-        return $response;
+        $payload['attachments'] = $this->buildChecksum($payload, $attachments);
+        return $this->post('attestations', $payload, $stream_body_map);
     }
 
     /**
      * add factoids to attestation with attachments, one factoid can have more than one attachments
-     * @param AddFactoidsPayload $payload
+     * @param array $payload
      * @param array $attachments
      * @throws ServerException
-     * @return AddFactoidsResponse
+     * @return array
      */
-    public function addFactoids(AddFactoidsPayload $payload, $attachments = null) {
+    public function addFactoids($payload, $attachments = null) {
         $this->checkAddFactoidsPayload($payload);
-        $payload_map = $this->buildAddFactoidsPayloadMap($payload, $attachments);
         $stream_body_map = $this->buildStreamBodyMap($attachments);
-        $response = new AddFactoidsResponse();
-        $this->post('factoids', $payload_map, $stream_body_map, $response);
-        return $response;
+        $payload['attachments'] = $this->buildChecksum($payload, $attachments);
+        return $this->post('factoids', $payload, $stream_body_map);
     }
 
     /**
      * apply ca
-     * @param ApplyCaPayload $payload
-     * @param Attachment $seal
+     * @param array $payload
+     * @param array $seal
      * @throws ServerException
-     * @return ApplyCaResponse
+     * @return array
      */
-    public function applyCa(ApplyCaPayload $payload, $seal = null) {
+    public function applyCa($payload, $seal = null) {
         $this->checkApplyCaPayload($payload);
-        if ($payload->getType() == CaType::ENTERPRISE) {
+        if ($payload['type'] == 'ENTERPRISE') {
             $this->checkSeal($seal);
         }
-        $payload_map = $this->buildApplyCaPayloadMap($payload);
         $stream_body_map = null;
         if ($seal != null) {
             $stream_body_map['seal'] = [$seal];
         }
-        $response = new ApplyCaResponse();
-        $this->post('cas', $payload_map, $stream_body_map, $response);
-        return $response;
+        return $this->post('cas', $payload, $stream_body_map);
     }
 
     /**
-     * @param CreateAttestationPayload $payload
+     * @param array $payload
      */
-    private function checkCreateAttestationPayload(CreateAttestationPayload $payload) {
-        if (is_null($payload)) {
+    private function checkCreateAttestationPayload($payload) {
+        if (!is_array($payload)) {
             throw new \InvalidArgumentException('payload can not be null');
         }
-        if (empty($payload->getTemplateId())) {
+        if (empty($payload['template_id'])) {
             throw new \InvalidArgumentException('payload.templateId can not be empty');
         }
-        if (empty($payload->getIdentities())) {
+        if (!is_array($payload['identities']) || empty($payload['identities'])) {
             throw new \InvalidArgumentException('payload.identities can not be empty');
         }
-        if (empty($payload->getFactoids())) {
+        if (!is_array($payload['factoids']) || empty($payload['factoids'])) {
             throw new \InvalidArgumentException('payload.factoids can not be empty');
         }
     }
 
     /**
-     * @param AddFactoidsPayload $payload
+     * @param array $payload
      */
-    private function checkAddFactoidsPayload(AddFactoidsPayload $payload) {
-        if (is_null($payload)) {
+    private function checkAddFactoidsPayload($payload) {
+        if (!is_array($payload)) {
             throw new \InvalidArgumentException('payload can not be null');
         }
-        if (empty($payload->getAno())) {
+        if (empty($payload['ano'])) {
             throw new \InvalidArgumentException('payload.ano can not be empty');
         }
-        if (empty($payload->getFactoids())) {
+        if (empty($payload['factoids'])) {
             throw new \InvalidArgumentException('payload.factoids can not be empty');
         }
     }
 
     /**
-     * @param ApplyCaPayload $payload
+     * @param array $payload
      */
-    private function checkApplyCaPayload(ApplyCaPayload $payload) {
-        if (is_null($payload)) {
+    private function checkApplyCaPayload($payload) {
+        if (!is_array($payload)) {
             throw new \InvalidArgumentException('payload can not be null');
         }
-        if (empty($payload->getType())) {
+        if (empty($payload['type'])) {
             throw new \InvalidArgumentException('payload.type can not be null');
         }
-        if ($payload->getType() == CaType::ENTERPRISE) {
-            if (empty($payload->getName())) {
+        if ($payload['type'] == 'ENTERPRISE') {
+            if (empty($payload['name'])) {
                 throw new \InvalidArgumentException('payload.name can not be empty');
             }
-            if (empty($payload->getIcCode())) {
+            if (empty($payload['ic_code'])) {
                 throw new \InvalidArgumentException('payload.ic_code can not be empty');
             }
-            if (empty($payload->getOrgCode())) {
+            if (empty($payload['org_code'])) {
                 throw new \InvalidArgumentException('payload.org_code can not be empty');
             }
-            if (empty($payload->getTaxCode())) {
+            if (empty($payload['tax_code'])) {
                 throw new \InvalidArgumentException('payload.tax_code can not be empty');
             }
         }
-        if (empty($payload->getLinkName())) {
+        if (empty($payload['link_name'])) {
             throw new \InvalidArgumentException('payload.link_name can not be empty');
         }
-        if (empty($payload->getLinkIdCard())) {
+        if (empty($payload['link_id_card'])) {
             throw new \InvalidArgumentException('payload.link_id_card can not be empty');
         }
-        if (empty($payload->getLinkPhone())) {
+        if (empty($payload['link_phone'])) {
             throw new \InvalidArgumentException('payload.link_phone can not be empty');
         }
-        if (empty($payload->getLinkEmail())) {
+        if (empty($payload['link_email'])) {
             throw new \InvalidArgumentException('payload.link_email can not be empty');
         }
     }
 
     /**
-     * @param Attachment $seal
+     * @param array $seal
      */
     private function checkSeal($seal) {
-        if (is_null($seal)) {
+        if (!is_array($seal)) {
             throw new \InvalidArgumentException('seal can not be null when ca type is enterprise');
         }
-        $filename = $seal->getResourceName();
-        if (strpos($filename, '.') === false) {
+        $filename = $seal['resource_name'];
+        if (!is_string($filename) || strpos($filename, '.') === false) {
             throw new \InvalidArgumentException('seal file name must be like xxx.png or xxx.jpg');
         }
         $file_type = substr($filename, strpos($filename, '.') + 1);
@@ -268,75 +261,25 @@ class BaoquanClient
     }
 
     /**
-     * @param CreateAttestationPayload $payload
+     * @param array $payload
      * @param array $attachments
      * @return array
      */
-    private function buildCreateAttestationPayloadMap(CreateAttestationPayload $payload, $attachments) {
-        $payload_map = [];
-        $payload_map['template_id'] = $payload->getTemplateId();
-        $payload_map['identities'] = $payload->getIdentities();
-        $payload_map['factoids'] = $payload->getFactoids();
-        $payload_map['completed'] = $payload->getCompleted();
-        $payload_map['attachments'] = $this->buildChecksum($payload, $attachments);
-        return $payload_map;
-    }
-
-    /**
-     * @param AddFactoidsPayload $payload
-     * @param array $attachments
-     * @return array
-     */
-    private function buildAddFactoidsPayloadMap(AddFactoidsPayload $payload, $attachments) {
-        $payload_map = [];
-        $payload_map['ano'] = $payload->getAno();
-        $payload_map['factoids'] = $payload->getFactoids();
-        $payload_map['completed'] = $payload->getCompleted();
-        $payload_map['attachments'] = $this->buildChecksum($payload, $attachments);
-        return $payload_map;
-    }
-
-    private function buildApplyCaPayloadMap(ApplyCaPayload $payload) {
-        $payload_map = [];
-        $payload_map['type'] = $payload->getType();
-        $payload_map['name'] = $payload->getName();
-        $payload_map['ic_code'] = $payload->getIcCode();
-        $payload_map['org_code'] = $payload->getOrgCode();
-        $payload_map['tax_code'] = $payload->getTaxCode();
-        $payload_map['link_name'] = $payload->getLinkName();
-        $payload_map['link_id_card'] = $payload->getLinkIdCard();
-        $payload_map['link_phone'] = $payload->getLinkPhone();
-        $payload_map['link_email'] = $payload->getLinkEmail();
-        return $payload_map;
-    }
-
-    /**
-     * @param AttestationPayload $payload
-     * @param array $attachments
-     * @return array
-     */
-    private function buildChecksum(AttestationPayload $payload, $attachments) {
+    private function buildChecksum(&$payload, $attachments) {
         $payload_attachments = null;
         if (!empty($attachments)) {
             $payload_attachments = new \stdClass();
-            $signs = $payload->getSigns();
-            $factoids_count = count($payload->getFactoids());
-            for($i = 0; $i < $factoids_count; $i++) {
-                $i_attachments = $attachments[$i];
-                $i_signs = null;
-                if (!is_null($signs) && isset($signs[$i])) {
-                    $i_signs = $signs[$i];
-                }
+            $signs = $payload['signs'];
+            unset($payload['signs']);
+            for($i = 0; $i < count($payload['factoids']); $i++) {
+                $i_attachments = isset($attachments[$i]) ? $attachments[$i] : null;
+                $i_signs = isset($signs[$i]) ? $signs[$i] : null;
                 if (!empty($i_attachments)) {
                     $objects = [];
-                    $i_attachments_count = count($i_attachments);
-                    for($j = 0; $j < $i_attachments_count; $j++) {
+                    for($j = 0; $j < count($i_attachments); $j++) {
                         $j_attachment = $i_attachments[$j];
-                        $checksum = Utils::checksum($j_attachment->getResource());
-                        $j_signs = null;
-                        if (!is_null($i_signs) && isset($i_signs[$j])) {
-                            $j_signs = $i_signs[$j];
-                        }
+                        $checksum = Utils::checksum($j_attachment['resource']);
+                        $j_signs = isset($i_signs[$j]) ? $i_signs[$j] : null;
                         if (is_null($j_signs)) {
                             $objects[] = $checksum;
                         } else {
@@ -358,9 +301,29 @@ class BaoquanClient
      * @return array
      */
     private function buildStreamBodyMap($attachments) {
+        if (is_null($attachments)) {
+            return null;
+        }
+        if (!is_array($attachments)) {
+            throw new \InvalidArgumentException('attachments should be array');
+        }
         $multipart_files = [];
-        if (!empty($attachments)) {
+        if (count($attachments) > 0) {
             foreach($attachments as $i => $file_list) {
+                if (!is_array($file_list)) {
+                    throw new \InvalidArgumentException(sprintf('attachments[%d] should be array', $i));
+                }
+                foreach($file_list as $j => $attachment) {
+                    if (!is_array($attachment)) {
+                        throw new \InvalidArgumentException(sprintf('attachments[%d][%d] should be array', $i, $j));
+                    }
+                    if (!is_resource($attachment['resource'])) {
+                        throw new \InvalidArgumentException(sprintf('attachments[%d][%d].resource should be resource', $i, $j));
+                    }
+                    if (empty($attachment['resource_name'])) {
+                        throw new \InvalidArgumentException(sprintf('attachments[%d][%d].resource_name can not be empty', $i, $j));
+                    }
+                }
                 $multipart_files[sprintf('attachments[%s][]', $i)] = $file_list;
             }
         }
@@ -371,10 +334,10 @@ class BaoquanClient
      * @param string $api_name
      * @param array $payload
      * @param array $attachments
-     * @param BaseResponse $response
      * @throws ServerException
+     * @return array
      */
-    private function post($api_name, $payload, $attachments, BaseResponse $response) {
+    private function post($api_name, $payload, $attachments) {
         $path = sprintf('/api/%s/%s', $this->version, $api_name);
         $request_id = $this->request_id_generator->createRequestId();
         if (empty($request_id)) {
@@ -390,7 +353,7 @@ class BaoquanClient
         }
         // build the data to sign
         $data = 'POST'.$path.$request_id.$this->access_key.$tonce.$payloadString;
-        $signature = Utils::sign($this->pem_path, $data);
+        $signature = Utils::sign($this->private_key_data, $data);
         // build post request
         $base_uri = sprintf('%s/api/%s/', $this->host, $this->version);
         $http_client = new Client([
@@ -428,8 +391,8 @@ class BaoquanClient
                 foreach($list as $attachment) {
                     $multipart[] = [
                         'name'=>$name,
-                        'contents'=>$attachment->getResource(),
-                        'filename'=>$attachment->getResourceName(),
+                        'contents'=>$attachment['resource'],
+                        'filename'=>$attachment['resource_name'],
                         'headers'=>[
                             'charset'=>'utf-8' // avoid chinese garbled
                         ]
@@ -455,7 +418,7 @@ class BaoquanClient
                 throw new ServerException($request_id, 'Unknown error', time() * 1000);
             }
         } else {
-            $response->parse($contents);
+            return $contents;
         }
     }
 }
