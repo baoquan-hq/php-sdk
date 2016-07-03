@@ -1,5 +1,5 @@
 {
-  "name": "baoquan/eagle-php-sdk",
+  "name": "baoquan/eagle-sdk",
   "type": "library",
   "description": "sdk for members to use the service of baoquan.com ",
   "keywords": ["baoquan","sdk"],
