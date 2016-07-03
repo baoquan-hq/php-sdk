@@ -607,11 +607,11 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
     public function testGetAttestation0() {
         $this->expectException(ServerException::class);
         $this->expectExceptionMessage('保全不存在');
-        $this->client->getAttestation('DB0C8DB14E3C44', null);
+        $this->client->getAttestation('DB0C8DB14E3C44');
     }
 
     public function testGetAttestation1() {
-        $response = $this->client->getAttestation('DB0C8DB14E3C44C7B9FBBE30EB179241', null);
+        $response = $this->client->getAttestation('DB0C8DB14E3C44C7B9FBBE30EB179241');
         $this->assertNotEmpty($response);
         $this->assertNotEmpty($response['data']);
         $this->assertEquals('DB0C8DB14E3C44C7B9FBBE30EB179241', $response['data']['no']);

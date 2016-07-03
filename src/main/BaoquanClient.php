@@ -160,7 +160,7 @@ class BaoquanClient
      * @throws ServerException
      * @return array
      */
-    public function getAttestation($ano, $fields) {
+    public function getAttestation($ano, $fields=null) {
         if (!is_string($ano) || empty($ano)) {
             throw new \InvalidArgumentException('ano can not be null');
         }
@@ -168,7 +168,7 @@ class BaoquanClient
             'ano'=>$ano,
             'fields'=>$fields
         ];
-        return $this->json('attestation', $payload, null);
+        return $this->json('attestation', $payload);
     }
 
     /**
@@ -216,10 +216,10 @@ class BaoquanClient
         if (empty($payload['template_id'])) {
             throw new \InvalidArgumentException('payload.templateId can not be empty');
         }
-        if (!is_array($payload['identities']) || empty($payload['identities'])) {
+        if (empty($payload['identities'])) {
             throw new \InvalidArgumentException('payload.identities can not be empty');
         }
-        if (!is_array($payload['factoids']) || empty($payload['factoids'])) {
+        if (empty($payload['factoids'])) {
             throw new \InvalidArgumentException('payload.factoids can not be empty');
         }
     }
@@ -371,7 +371,7 @@ class BaoquanClient
      * @throws ServerException
      * @return array
      */
-    private function json($api_name, $payload, $attachments) {
+    private function json($api_name, $payload, $attachments=null) {
         $request_id = $this->request_id_generator->createRequestId();
         $http_response = $this->post($request_id, $api_name, $payload, $attachments);
         if ($http_response->getStatusCode() != 200) {
@@ -412,7 +412,7 @@ class BaoquanClient
      * @param $attachments
      * @return \Psr\Http\Message\ResponseInterface
      */
-    private function post($request_id, $api_name, $payload, $attachments) {
+    private function post($request_id, $api_name, $payload, $attachments=null) {
         $path = sprintf('/api/%s/%s', $this->version, $api_name);
         if (empty($request_id)) {
             throw new ClientException('request id can not be empty');
