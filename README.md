@@ -109,6 +109,37 @@ try {
 }
 ```
 
+## Get attestation data
+
+```php
+try {
+  $response = $client->getAttestation('DB0C8DB14E3C44C7B9FBBE30EB179241', ['factoids']);
+  var_dump($response['data']);
+} catch (ServerException $e) {
+  echo $e->getMessage();
+}
+```
+
+The second param value of getAttestation can be null, empty array, array of field "identities", "factoids", "attachments"
+if null, the response contains all filed value
+if empty array, the response contains all filed value except for field "identities", "factoids", "attachments"
+if array of one or more value in "identities", "factoids", "attachments", the response contains the respond field value
+if you just want to get the block chain hash you should set null of the second param, because server need more time to connect database, decrypt data when you want to get "identities", "factoids", "attachments"
+
+## Download attestation
+
+```php
+try {
+  $response = $client->downloadAttestation('DB0C8DB14E3C44C7B9FBBE30EB179241');
+  $file = fopen($response['file_name'], 'w');
+  // $response['file'] is a \Psr\Http\Message\StreamInterface object
+  fwrite($file, $response['file']->getContents());
+  fclose($file);
+} catch (ServerException $e) {
+  echo $e->getMessage();
+}
+```
+
 ## Apply Ca
 
 ### Apply personal Ca

@@ -603,4 +603,48 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
         ]);
         $this->assertNotEmpty($response['data']['no']);
     }
+
+    public function testGetAttestation0() {
+        $this->expectException(ServerException::class);
+        $this->expectExceptionMessage('保全不存在');
+        $this->client->getAttestation('DB0C8DB14E3C44', null);
+    }
+
+    public function testGetAttestation1() {
+        $response = $this->client->getAttestation('DB0C8DB14E3C44C7B9FBBE30EB179241', null);
+        $this->assertNotEmpty($response);
+        $this->assertNotEmpty($response['data']);
+        $this->assertEquals('DB0C8DB14E3C44C7B9FBBE30EB179241', $response['data']['no']);
+    }
+
+    public function testGetAttestation2() {
+        $response = $this->client->getAttestation('DB0C8DB14E3C44C7B9FBBE30EB179241', []);
+        $this->assertNotEmpty($response);
+        $this->assertNotEmpty($response['data']);
+        $this->assertEquals('DB0C8DB14E3C44C7B9FBBE30EB179241', $response['data']['no']);
+        $this->assertEmpty($response['data']['identities']);
+        $this->assertEmpty($response['data']['factoids']);
+        $this->assertEmpty($response['data']['attachments']);
+    }
+
+    public function testGetAttestation3() {
+        $response = $this->client->getAttestation('DB0C8DB14E3C44C7B9FBBE30EB179241', ['factoids']);
+        $this->assertNotEmpty($response);
+        $this->assertNotEmpty($response['data']);
+        $this->assertEquals('DB0C8DB14E3C44C7B9FBBE30EB179241', $response['data']['no']);
+        $this->assertEmpty($response['data']['identities']);
+        $this->assertNotEmpty($response['data']['factoids']);
+        $this->assertEmpty($response['data']['attachments']);
+    }
+
+    public function testDownloadAttestation0() {
+        $response = $this->client->downloadAttestation('DB0C8DB14E3C44C7B9FBBE30EB179241');
+        $this->assertNotEmpty($response);
+        $this->assertNotEmpty($response['file_name']);
+        $this->assertNotEmpty($response['file']);
+
+        $file = fopen($response['file_name'], 'w');
+        fwrite($file, $response['file']->getContents());
+        fclose($file);
+    }
 }

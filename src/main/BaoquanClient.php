@@ -136,7 +136,7 @@ class BaoquanClient
         $this->checkCreateAttestationPayload($payload);
         $stream_body_map = $this->buildStreamBodyMap($attachments);
         $payload['attachments'] = $this->buildChecksum($payload, $attachments);
-        return $this->post('attestations', $payload, $stream_body_map);
+        return $this->json('attestations', $payload, $stream_body_map);
     }
 
     /**
@@ -150,7 +150,41 @@ class BaoquanClient
         $this->checkAddFactoidsPayload($payload);
         $stream_body_map = $this->buildStreamBodyMap($attachments);
         $payload['attachments'] = $this->buildChecksum($payload, $attachments);
-        return $this->post('factoids', $payload, $stream_body_map);
+        return $this->json('factoids', $payload, $stream_body_map);
+    }
+
+    /**
+     * get attestation raw data
+     * @param string $ano
+     * @param array $fields
+     * @throws ServerException
+     * @return array
+     */
+    public function getAttestation($ano, $fields) {
+        if (!is_string($ano) || empty($ano)) {
+            throw new \InvalidArgumentException('ano can not be null');
+        }
+        $payload = [
+            'ano'=>$ano,
+            'fields'=>$fields
+        ];
+        return $this->json('attestation', $payload, null);
+    }
+
+    /**
+     * download attestation file which is hashed to block chain
+     * @param string $ano
+     * @throws ServerException
+     * @return array
+     */
+    public function downloadAttestation($ano) {
+        if (!is_string($ano) || empty($ano)) {
+            throw new \InvalidArgumentException('ano can not be null');
+        }
+        $payload = [
+            'ano'=>$ano,
+        ];
+        return $this->file('attestation/download', $payload);
     }
 
     /**
@@ -169,7 +203,7 @@ class BaoquanClient
         if ($seal != null) {
             $stream_body_map['seal'] = [$seal];
         }
-        return $this->post('cas', $payload, $stream_body_map);
+        return $this->json('cas', $payload, $stream_body_map);
     }
 
     /**
@@ -337,9 +371,49 @@ class BaoquanClient
      * @throws ServerException
      * @return array
      */
-    private function post($api_name, $payload, $attachments) {
-        $path = sprintf('/api/%s/%s', $this->version, $api_name);
+    private function json($api_name, $payload, $attachments) {
         $request_id = $this->request_id_generator->createRequestId();
+        $http_response = $this->post($request_id, $api_name, $payload, $attachments);
+        if ($http_response->getStatusCode() != 200) {
+            $this->throwServerException($request_id, $http_response);
+        } else {
+            return json_decode($http_response->getBody()->getContents(), true);
+        }
+    }
+
+    /**
+     * @param string $api_name
+     * @param array $payload
+     * @return array
+     * @throws ServerException
+     */
+    private function file($api_name, $payload) {
+        $request_id = $this->request_id_generator->createRequestId();
+        $http_response = $this->post($request_id, $api_name, $payload, null);
+        if ($http_response->getStatusCode() != 200) {
+            $this->throwServerException($request_id, $http_response);
+        } else {
+            $header = $http_response->getHeader('Content-Disposition');
+            $response = [];
+            foreach($header as $value) {
+                if (preg_match('/.*filename="(.*)".*/', $value, $matches) === 1) {
+                    $response['file_name'] = $matches[1];
+                    break;
+                }
+            }$response['file'] = $http_response->getBody();
+            return $response;
+        }
+    }
+
+    /**
+     * @param $request_id
+     * @param $api_name
+     * @param $payload
+     * @param $attachments
+     * @return \Psr\Http\Message\ResponseInterface
+     */
+    private function post($request_id, $api_name, $payload, $attachments) {
+        $path = sprintf('/api/%s/%s', $this->version, $api_name);
         if (empty($request_id)) {
             throw new ClientException('request id can not be empty');
         }
@@ -408,17 +482,22 @@ class BaoquanClient
         } catch (RequestException $e) {
             throw new ClientException('http post failed, please check your host or network', $e);
         }
+        return $http_response;
+    }
+
+    /**
+     * @param $request_id
+     * @param \Psr\Http\Message\ResponseInterface $http_response
+     * @throws ServerException
+     */
+    private function throwServerException($request_id, $http_response) {
         $contents = json_decode($http_response->getBody()->getContents(), true);
-        if ($http_response->getStatusCode() != 200) {
-            if (is_array($contents) &&
-                isset($contents['message']) &&
-                isset($contents['timestamp'])) {
-                throw new ServerException($request_id, $contents['message'], $contents['timestamp']);
-            } else {
-                throw new ServerException($request_id, 'Unknown error', time() * 1000);
-            }
+        if (is_array($contents) &&
+            isset($contents['message']) &&
+            isset($contents['timestamp'])) {
+            throw new ServerException($request_id, $contents['message'], $contents['timestamp']);
         } else {
-            return $contents;
+            throw new ServerException($request_id, 'Unknown error', time() * 1000);
         }
     }
 }
