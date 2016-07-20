@@ -180,6 +180,36 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
         ]);
     }
 
+    public function testCreateAttestation7() {
+        $response = $this->client->createAttestation([
+            'template_id'=>'2hSWTZ4oqVEJKAmK2RiyT4',
+            'identities'=>[
+                'ID'=>'42012319800127691X',
+                'MO'=>'15857112383',
+            ],
+            'factoids'=>[
+                [
+                    'type'=>'user',
+                    'data'=>[
+                        'name'=>'张三',
+                        'phone_number'=>'13234568732',
+                        'registered_at'=>'1466674609',
+                        'username'=>'tom'
+                    ]
+                ]
+            ],
+            'completed'=>true
+        ], [
+            0=>[
+                [
+                    'resource'=>fopen(__DIR__.'/resources/contract.pdf', 'r'),
+                    'resource_name'=>'contract.pdf'
+                ]
+            ]
+        ]);
+        $this->assertNotEmpty($response['data']['no']);
+    }
+
     /**
      * payload.ano can not be empty
      */

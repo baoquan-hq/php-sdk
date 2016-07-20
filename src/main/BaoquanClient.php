@@ -303,17 +303,26 @@ class BaoquanClient
         $payload_attachments = null;
         if (!empty($attachments)) {
             $payload_attachments = new \stdClass();
-            $signs = $payload['signs'];
-            unset($payload['signs']);
+            $signs = null;
+            if (isset($payload['signs'])) {
+                $signs = $payload['signs'];
+                unset($payload['signs']);
+            }
             for($i = 0; $i < count($payload['factoids']); $i++) {
                 $i_attachments = isset($attachments[$i]) ? $attachments[$i] : null;
-                $i_signs = isset($signs[$i]) ? $signs[$i] : null;
+                $i_signs = null;
+                if (!is_null($signs) && isset($signs[$i])) {
+                    $i_signs = $signs[$i];
+                }
                 if (!empty($i_attachments)) {
                     $objects = [];
                     for($j = 0; $j < count($i_attachments); $j++) {
                         $j_attachment = $i_attachments[$j];
                         $checksum = Utils::checksum($j_attachment['resource']);
-                        $j_signs = isset($i_signs[$j]) ? $i_signs[$j] : null;
+                        $j_signs = null;
+                        if (!is_null($i_signs) && isset($i_signs[$j])) {
+                            $j_signs = $i_signs[$j];
+                        }
                         if (is_null($j_signs)) {
                             $objects[] = $checksum;
                         } else {
