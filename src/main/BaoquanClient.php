@@ -196,9 +196,6 @@ class BaoquanClient
      */
     public function applyCa($payload, $seal = null) {
         $this->checkApplyCaPayload($payload);
-        if ($payload['type'] == 'ENTERPRISE') {
-            $this->checkSeal($seal);
-        }
         $stream_body_map = null;
         if ($seal != null) {
             $stream_body_map['seal'] = [$seal];
@@ -274,23 +271,6 @@ class BaoquanClient
         }
         if (empty($payload['link_email'])) {
             throw new \InvalidArgumentException('payload.link_email can not be empty');
-        }
-    }
-
-    /**
-     * @param array $seal
-     */
-    private function checkSeal($seal) {
-        if (!is_array($seal)) {
-            throw new \InvalidArgumentException('seal can not be null when ca type is enterprise');
-        }
-        $filename = $seal['resource_name'];
-        if (!is_string($filename) || strpos($filename, '.') === false) {
-            throw new \InvalidArgumentException('seal file name must be like xxx.png or xxx.jpg');
-        }
-        $file_type = substr($filename, strpos($filename, '.') + 1);
-        if ($file_type != 'jpg' && $file_type != 'png') {
-            throw new \InvalidArgumentException('seal file name extension must be png or jpg');
         }
     }
 
