@@ -253,12 +253,6 @@ class BaoquanClient
             if (empty($payload['ic_code'])) {
                 throw new \InvalidArgumentException('payload.ic_code can not be empty');
             }
-            if (empty($payload['org_code'])) {
-                throw new \InvalidArgumentException('payload.org_code can not be empty');
-            }
-            if (empty($payload['tax_code'])) {
-                throw new \InvalidArgumentException('payload.tax_code can not be empty');
-            }
         }
         if (empty($payload['link_name'])) {
             throw new \InvalidArgumentException('payload.link_name can not be empty');
