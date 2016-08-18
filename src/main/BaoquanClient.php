@@ -210,8 +210,11 @@ class BaoquanClient
         if (!is_array($payload)) {
             throw new \InvalidArgumentException('payload can not be null');
         }
+        if (empty($payload['unique_id'])) {
+            throw new \InvalidArgumentException('payload.unique_id can not be empty');
+        }
         if (empty($payload['template_id'])) {
-            throw new \InvalidArgumentException('payload.templateId can not be empty');
+            throw new \InvalidArgumentException('payload.template_id can not be empty');
         }
         if (empty($payload['identities'])) {
             throw new \InvalidArgumentException('payload.identities can not be empty');

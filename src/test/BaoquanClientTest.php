@@ -42,21 +42,33 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * payload.templateId can not be empty
+     * payload.unique_id can not be empty
      */
     public function testCreateAttestation0() {
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('payload.templateId can not be empty');
+        $this->expectExceptionMessage('payload.unique_id can not be empty');
         $this->client->createAttestation([]);
+    }
+
+    /**
+     * payload.template_id can not be empty
+     */
+    public function testCreateAttestation1() {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('payload.template_id can not be empty');
+        $this->client->createAttestation([
+            'unique_id'=>$this->faker->uuid
+        ]);
     }
 
     /**
      * payload.identities can not be empty
      */
-    public function testCreateAttestation1() {
+    public function testCreateAttestation2() {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('payload.identities can not be empty');
         $this->client->createAttestation([
+            'unique_id'=>$this->faker->uuid,
             'template_id'=>'2hSWTZ4oqVEJKAmK2RiyT4'
         ]);
     }
@@ -64,10 +76,11 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
     /**
      * payload.factoids can not be empty
      */
-    public function testCreateAttestation2() {
+    public function testCreateAttestation3() {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('payload.factoids can not be empty');
         $this->client->createAttestation([
+            'unique_id'=>$this->faker->uuid,
             'template_id'=>'2hSWTZ4oqVEJKAmK2RiyT4',
             'identities'=>[
                 'ID'=>'42012319800127691X',
@@ -79,10 +92,11 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
     /**
      * template should be exist
      */
-    public function testCreateAttestation3() {
+    public function testCreateAttestation4() {
         $this->expectException(ServerException::class);
         $this->expectExceptionMessage('模板不存在');
         $this->client->createAttestation([
+            'unique_id'=>$this->faker->uuid,
             'template_id'=>'2hSWTZ4oqVEJ',
             'identities'=>[
                 'ID'=>'42012319800127691X',
@@ -90,6 +104,7 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
             ],
             'factoids'=>[
                 [
+                    'unique_id'=>$this->faker->uuid,
                     'type'=>'user',
                     'data'=>[
                         'name'=>'张三',
@@ -107,10 +122,11 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
      * when you edit template schemas on line and set user.phone_number is required
      * you must give a valid phone_number value in user factoid
      */
-    public function testCreateAttestation4() {
+    public function testCreateAttestation5() {
         $this->expectException(ServerException::class);
         $this->expectExceptionMessage('invalid data : user.phone_number required');
         $this->client->createAttestation([
+            'unique_id'=>$this->faker->uuid,
             'template_id'=>'2hSWTZ4oqVEJKAmK2RiyT4',
             'identities'=>[
                 'ID'=>'42012319800127691X',
@@ -118,6 +134,7 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
             ],
             'factoids'=>[
                 [
+                    'unique_id'=>$this->faker->uuid,
                     'type'=>'user',
                     'data'=>[
                         'name'=>'张三',
@@ -132,10 +149,11 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
     /**
      * factoid data type should be in template schemas
      */
-    public function testCreateAttestation5() {
+    public function testCreateAttestation6() {
         $this->expectException(ServerException::class);
         $this->expectExceptionMessage('invalid factoid type: product corresponding schema not exist');
         $this->client->createAttestation([
+            'unique_id'=>$this->faker->uuid,
             'template_id'=>'2hSWTZ4oqVEJKAmK2RiyT4',
             'identities'=>[
                 'ID'=>'42012319800127691X',
@@ -143,6 +161,7 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
             ],
             'factoids'=>[
                 [
+                    'unique_id'=>$this->faker->uuid,
                     'type'=>'product',
                     'data'=>[
                         'name'=>'浙金网',
@@ -159,10 +178,11 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
      * when user.phone_number is required but you only upload product
      * you must call addFactoids api to upload user later
      */
-    public function testCreateAttestation6() {
+    public function testCreateAttestation7() {
         $this->expectException(ServerException::class);
         $this->expectExceptionMessage('invalid data : user.phone_number required');
         $this->client->createAttestation([
+            'unique_id'=>$this->faker->uuid,
             'template_id'=>'5Yhus2mVSMnQRXobRJCYgt',
             'identities'=>[
                 'ID'=>'42012319800127691X',
@@ -170,6 +190,7 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
             ],
             'factoids'=>[
                 [
+                    'unique_id'=>$this->faker->uuid,
                     'type'=>'product',
                     'data'=>[
                         'name'=>'浙金网',
@@ -180,8 +201,9 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
         ]);
     }
 
-    public function testCreateAttestation7() {
+    public function testCreateAttestation8() {
         $response = $this->client->createAttestation([
+            'unique_id'=>$this->faker->uuid,
             'template_id'=>'2hSWTZ4oqVEJKAmK2RiyT4',
             'identities'=>[
                 'ID'=>'42012319800127691X',
@@ -189,6 +211,7 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
             ],
             'factoids'=>[
                 [
+                    'unique_id'=>$this->faker->uuid,
                     'type'=>'user',
                     'data'=>[
                         'name'=>'张三',
@@ -208,6 +231,37 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
             ]
         ]);
         $this->assertNotEmpty($response['data']['no']);
+    }
+
+    /**
+     * create attestation with the same unique id will return the same attestation no
+     */
+    public function testCreateAttestation9() {
+        $payload = [
+            'unique_id'=>$this->faker->uuid,
+            'template_id'=>'2hSWTZ4oqVEJKAmK2RiyT4',
+            'identities'=>[
+                'ID'=>'42012319800127691X',
+                'MO'=>'15857112383',
+            ],
+            'factoids'=>[
+                [
+                    'unique_id'=>$this->faker->uuid,
+                    'type'=>'user',
+                    'data'=>[
+                        'name'=>'张三',
+                        'phone_number'=>'13234568732',
+                        'registered_at'=>'1466674609',
+                        'username'=>'tom'
+                    ]
+                ]
+            ],
+            'completed'=>true
+        ];
+        $response = $this->client->createAttestation($payload);
+        $this->assertNotEmpty($response['data']['no']);
+        $response1 = $this->client->createAttestation($payload);
+        $this->assertEquals($response['data']['no'], $response1['data']['no']);
     }
 
     /**
@@ -240,6 +294,7 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
             'ano'=>'D58FFFD28A8949',
             'factoids'=>[
                 [
+                    'unique_id'=>$this->faker->uuid,
                     'type'=>'product',
                     'data'=>[
                         'name'=>'浙金网',
@@ -260,6 +315,7 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
             'ano'=>'4E6457A5A9B94FBFB64E0D08BDFA2BD4',
             'factoids'=>[
                 [
+                    'unique_id'=>$this->faker->uuid,
                     'type'=>'product',
                     'data'=>[
                         'name'=>'浙金网',
@@ -275,6 +331,7 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
      */
     public function testAddFactoids4() {
         $response = $this->client->createAttestation([
+            'unique_id'=>$this->faker->uuid,
             'template_id'=>'5Yhus2mVSMnQRXobRJCYgt',
             'identities'=>[
                 'ID'=>'42012319800127691X',
@@ -282,6 +339,7 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
             ],
             'factoids'=>[
                 [
+                    'unique_id'=>$this->faker->uuid,
                     'type'=>'product',
                     'data'=>[
                         'name'=>'浙金网',
@@ -300,6 +358,7 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
             'ano'=>$no,
             'factoids'=>[
                 [
+                    'unique_id'=>$this->faker->uuid,
                     'type'=>'product',
                     'data'=>[
                         'name'=>'浙金网',
@@ -312,10 +371,12 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * create attestation and then add factoid
+     * same unique id will return success
      */
     public function testAddFactoids5() {
+        $fuid = $this->faker->uuid;
         $response = $this->client->createAttestation([
+            'unique_id'=>$this->faker->uuid,
             'template_id'=>'5Yhus2mVSMnQRXobRJCYgt',
             'identities'=>[
                 'ID'=>'42012319800127691X',
@@ -323,6 +384,7 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
             ],
             'factoids'=>[
                 [
+                    'unique_id'=>$fuid,
                     'type'=>'product',
                     'data'=>[
                         'name'=>'浙金网',
@@ -339,6 +401,50 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
             'ano'=>$no,
             'factoids'=>[
                 [
+                    'unique_id'=>$fuid,
+                    'type'=>'product',
+                    'data'=>[
+                        'name'=>'浙金网',
+                        'description'=>'p2g理财平台',
+                    ]
+                ]
+            ],
+            'completed'=>false
+        ]);
+        $this->assertTrue($response['data']['success']);
+    }
+
+    /**
+     * create attestation and then add factoid
+     */
+    public function testAddFactoids6() {
+        $response = $this->client->createAttestation([
+            'unique_id'=>$this->faker->uuid,
+            'template_id'=>'5Yhus2mVSMnQRXobRJCYgt',
+            'identities'=>[
+                'ID'=>'42012319800127691X',
+                'MO'=>'15857112383',
+            ],
+            'factoids'=>[
+                [
+                    'unique_id'=>$this->faker->uuid,
+                    'type'=>'product',
+                    'data'=>[
+                        'name'=>'浙金网',
+                        'description'=>'p2g理财平台',
+                    ]
+                ]
+            ],
+            'completed'=>false
+        ]);
+        $no = $response['data']['no'];
+        $this->assertNotEmpty($no);
+
+        $response = $this->client->addFactoids([
+            'ano'=>$no,
+            'factoids'=>[
+                [
+                    'unique_id'=>$this->faker->uuid,
                     'type'=>'user',
                     'data'=>[
                         'name'=>'张三',
@@ -385,28 +491,9 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * seal can not be null when ca type is enterprise
-     */
-    public function testApplyCa3() {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('seal can not be null when ca type is enterprise');
-        $this->client->applyCa([
-            'type'=>'ENTERPRISE',
-            'name'=>'浙金网',
-            'ic_code'=>'91330105311263043J',
-            'org_code'=>'311263043',
-            'tax_code'=>'330105311263043',
-            'link_name'=>$this->faker->name,
-            'link_id_card'=>Utils::randomIdCard(),
-            'link_phone'=>$this->faker->phoneNumber,
-            'link_email'=>$this->faker->email,
-        ]);
-    }
-
-    /**
      * apply personal ca
      */
-    public function testApplyCa4() {
+    public function testApplyCa3() {
         $response = $this->client->applyCa([
             'type'=>'PERSONAL',
             'link_name'=>$this->faker->name,
@@ -420,7 +507,7 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
     /**
      * apply enterprise ca
      */
-    public function testApplyCa5() {
+    public function testApplyCa4() {
         $response = $this->client->applyCa([
             'type'=>'ENTERPRISE',
             'name'=>'浙金网',
@@ -443,6 +530,7 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
      */
     public function testSign0() {
         $response = $this->client->createAttestation([
+            'unique_id'=>$this->faker->uuid,
             'template_id'=>'2hSWTZ4oqVEJKAmK2RiyT4',
             'identities'=>[
                 'ID'=>'42012319800127691X',
@@ -450,6 +538,7 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
             ],
             'factoids'=>[
                 [
+                    'unique_id'=>$this->faker->uuid,
                     'type'=>'user',
                     'data'=>[
                         'name'=>'张三',
@@ -484,6 +573,7 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
      */
     public function testSign1() {
         $response = $this->client->createAttestation([
+            'unique_id'=>$this->faker->uuid,
             'template_id'=>'2hSWTZ4oqVEJKAmK2RiyT4',
             'identities'=>[
                 'ID'=>'42012319800127691X',
@@ -491,6 +581,7 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
             ],
             'factoids'=>[
                 [
+                    'unique_id'=>$this->faker->uuid,
                     'type'=>'user',
                     'data'=>[
                         'name'=>'张三',
@@ -529,6 +620,7 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
      */
     public function testSign2() {
         $response = $this->client->createAttestation([
+            'unique_id'=>$this->faker->uuid,
             'template_id'=>'5Yhus2mVSMnQRXobRJCYgt',
             'identities'=>[
                 'ID'=>'42012319800127691X',
@@ -536,6 +628,7 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
             ],
             'factoids'=>[
                 [
+                    'unique_id'=>$this->faker->uuid,
                     'type'=>'product',
                     'data'=>[
                         'name'=>'浙金网',
@@ -543,6 +636,7 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
                     ]
                 ],
                 [
+                    'unique_id'=>$this->faker->uuid,
                     'type'=>'user',
                     'data'=>[
                         'name'=>'张三',
@@ -587,6 +681,7 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
      */
     public function testSign3() {
         $response = $this->client->createAttestation([
+            'unique_id'=>$this->faker->uuid,
             'template_id'=>'5Yhus2mVSMnQRXobRJCYgt',
             'identities'=>[
                 'ID'=>'42012319800127691X',
@@ -594,6 +689,7 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
             ],
             'factoids'=>[
                 [
+                    'unique_id'=>$this->faker->uuid,
                     'type'=>'product',
                     'data'=>[
                         'name'=>'浙金网',
@@ -601,6 +697,7 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
                     ]
                 ],
                 [
+                    'unique_id'=>$this->faker->uuid,
                     'type'=>'user',
                     'data'=>[
                         'name'=>'张三',
