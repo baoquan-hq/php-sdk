@@ -84,6 +84,82 @@ try {
 }
 ```
 
+### Create attestation with hash
+
+```php
+try {
+    $response = $client->createAttestationHash([
+            // 设置保全唯一码
+            'unique_id'=>'5bf54bc4-ec69-4a5d-b6e4-a3f670f795f4',
+            // 设置模板id
+            'template_id'=>'v137Mok8WPreDoorWcuZaH',
+            // 设置保全所有者的身份标识
+            'identities'=>[
+                'ID'=>'42012319800127691X',
+                'MO'=>'15857112383',
+            ],
+            // 陈述对象列表
+            'factoids'=>[
+                // user陈述
+                [
+                    'unique_id'=>'c83d838e-3844-4689-addf-ca0f01171e7c',
+                    'type'=>'file',
+
+                    'data'=>[
+                        'file_name'=>'123.txt'
+                    ]
+                ]
+            ],
+            // 设置陈述是否上传完成，如果设置成true，则后续不能继续追加陈述
+            'completed'=>true
+            ]
+            ,"064eb22a4e3bff9f478eb94b87b5b2cb65063de6a3585d44903e814c0aaf1356"
+    );
+    echo $response['data']['no'];
+} catch (ServerException $e) {
+    echo $e->getMessage();
+}
+```
+
+### Create attestation with url###
+
+```php
+try {
+    $response = $client->createAttestationURL([
+            // 设置保全唯一码
+            'unique_id'=>'5bf54bc4-ec69-4a5d-b6e4-a3f670f795f5',
+            // 设置模板id
+            'template_id'=>'uiqAvzh5uLKYBd4Jp9Upr1',
+            // 设置保全所有者的身份标识
+            'identities'=>[
+                'ID'=>'42012319800127691X',
+                'MO'=>'15857112383',
+            ],
+            // 陈述对象列表
+            'factoids'=>[
+                // user陈述
+                [
+                    'unique_id'=>'c83d838e-3844-4689-addf-ca0f01171e7c',
+                    'type'=>'content',
+
+                    'data'=>[
+                        'url'=>'$url'
+                    ]
+                ]
+            ],
+            // 设置陈述是否上传完成，如果设置成true，则后续不能继续追加陈述
+            'completed'=>true
+            ]
+            ,"http://www.baidu.com/"
+    );
+    echo $response['data']['no'];
+} catch (ServerException $e) {
+    echo $e->getMessage();
+}
+```
+
+
+
 ## Add factoid
 
 ```php

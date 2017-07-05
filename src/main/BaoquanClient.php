@@ -139,6 +139,38 @@ class BaoquanClient
         return $this->json('attestations', $payload, $stream_body_map);
     }
 
+     /**
+     * create attestation with hash
+     * @param array $payload
+     * @param string $hash
+     * @throws ServerException
+     * @return array
+     */
+    public function createAttestationHash($payload, $hash) {
+        if (is_null($hash)) {
+            throw new \InvalidArgumentException('hash should not be null');
+        }
+        $payload['sha256'] = $hash
+        $this->checkCreateAttestationPayload($payload);
+        return $this->json('attestations/hash', $payload, null);
+    }
+
+     /**
+     * create attestation with url
+     * @param array $payload
+     * @param string $url
+     * @throws ServerException
+     * @return array
+     */
+    public function createAttestationURL($payload, $url) {
+        if (is_null($url)) {
+            throw new \InvalidArgumentException('url should not be null');
+        }
+        $payload['url'] = $url;
+        $this->checkCreateAttestationPayload($payload);
+        return $this->json('attestations/url', $payload, null);
+    }
+
     /**
      * add factoids to attestation with attachments, one factoid can have more than one attachments
      * @param array $payload
