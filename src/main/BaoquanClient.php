@@ -150,7 +150,7 @@ class BaoquanClient
         if (is_null($hash)) {
             throw new \InvalidArgumentException('hash should not be null');
         }
-        $payload['sha256'] = $hash
+        $payload['sha256'] = $hash;
         $this->checkCreateAttestationPayload($payload);
         return $this->json('attestations/hash', $payload, null);
     }
