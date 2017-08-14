@@ -172,6 +172,96 @@ class BaoquanClient
     }
 
     /**
+     * upload signature image file for the current user
+     * @param array $attachments
+     * @throws ServerException
+     * @return array
+     */
+    public function uploadContractSignaturePng($attachments){
+        $payload = array();
+        $this->checkUploadContractPdfPayload($attachments);
+        $stream_body_map = $this->buildStreamBodyMap($attachments);
+        return $this->json('contract/signature', $payload, $stream_body_map);
+    }
+
+    /**
+     * get list of signature image file id for the current user
+     * @throws ServerException
+     * @return array
+     */
+    public function listContractSignature(){
+        return $this->json('contract/signature/list', array(), null);
+    }
+
+    /**
+     * set default signature image file id for the current user
+     * @param array $payload
+     * @throws ServerException
+     * @return array
+     */
+    public function setDefaultContractSignatureId($payload){
+        $this->checkContractSignaturePayload($payload);
+        return $this->json('contract/signature/default', $payload, null);
+    }
+
+    /**
+     * remove one signature image file
+     * @param array $payload
+     * @throws ServerException
+     * @return array
+     */
+    public function deleteContractSignature($payload){
+        $this->checkContractSignaturePayload($payload);
+        return $this->json('contract/signature/delete', $payload, null);
+    }
+
+    /**
+     * upload one pdf file for contract
+     * @param array $payload
+     * @throws ServerException
+     * @return array
+     */
+    public function uploadContractPdf($attachments){
+        $payload = array();
+        $this->checkUploadContractPdfPayload($attachments);
+        $stream_body_map = $this->buildStreamBodyMap($attachments);
+        return $this->json('contract/uploadPdf', $payload, $stream_body_map);
+    }
+
+    /**
+     * set detail for contract
+     * @param array $payload
+     * @throws ServerException
+     * @return array
+     */
+    public function setContractDetail($payload){
+        $this->checkSetContractDetailPayload($payload);
+        return $this->json('contract/setDetail', $payload, null);
+    }
+
+    /**
+     * require verify code for change contract
+     * @param array $payload
+     * @throws ServerException
+     * @return array
+     */
+    public function requireContractVerifyCode($payload){
+        $this->checkContractVerifyCodePayload($payload);
+        return $this->json('contract/verifyCode', $payload, null);
+    }
+
+    /**
+     * change contract status
+     * @param array $payload
+     * @throws ServerException
+     * @return array
+     */
+    public function signContract($payload){
+        $this->checkSignContractPayload($payload);
+        return $this->json('contract/sign', $payload, null);
+    }
+
+    /**
      * add factoids to attestation with attachments, one factoid can have more than one attachments
      * @param array $payload
      * @param array $attachments
@@ -300,6 +390,102 @@ class BaoquanClient
         }
         if (empty($payload['link_email'])) {
             throw new \InvalidArgumentException('payload.link_email can not be empty');
+        }
+    }
+
+    private function checkUploadContractPdfPayload($attachments){
+        if (!is_array($attachments)) {
+            throw new \InvalidArgumentException('attachments should be array');
+        }
+        if (count($attachments) == 0){
+            throw new \InvalidArgumentException('attachments can not be empty');
+        }
+    }
+
+    private function checkSetContractDetailPayload(&$payload){
+        if (!is_array($payload)) {
+            throw new \InvalidArgumentException('payload can not be null');
+        }
+
+        if (empty($payload['contract_id'])){
+            throw new \InvalidArgumentException('payload.contract_id can not be empty');
+        }
+
+        if (empty($payload['title'])){
+            throw new \InvalidArgumentException('payload.contract_id can not be empty');
+        }
+
+        if (empty($payload['end_at'])){
+            throw new \InvalidArgumentException('payload.contract_id can not be empty');
+        }
+
+        $unixtime=strtotime($payload['end_at']) ? strtotime($payload['end_at']) : false;
+        if ($unixtime === false){
+            throw new \InvalidArgumentException('payload.end_at format error');
+        }
+
+        $payload['end_at'] = $unixtime*1000;
+
+        if (!is_array($payload['userPhones'])){
+            throw new \InvalidArgumentException('payload.userPhones should be array');
+        }
+
+        if (count($payload['userPhones']) == 0){
+            throw new \InvalidArgumentException('payload.userPhones can not be empty');
+        }
+    }
+
+    private function checkSignContractPayload($payload){
+        if (!is_array($payload)) {
+            throw new \InvalidArgumentException('payload can not be null');
+        }
+        if (empty($payload['contract_id'])){
+            throw new \InvalidArgumentException('payload.contract_id can not be empty');
+        }
+
+        if (empty($payload['phone'])){
+            throw new \InvalidArgumentException('payload.phone can not be empty');
+        }
+
+        if (empty($payload['ecs_status'])){
+            throw new \InvalidArgumentException('payload.ecs_status can not be empty');
+        }
+
+        if (empty($payload['page'])){
+            throw new \InvalidArgumentException('payload.page can not be empty');
+        }
+
+        if (empty($payload['posX'])){
+            throw new \InvalidArgumentException('payload.posX can not be empty');
+        }
+
+        if (empty($payload['posY'])){
+            throw new \InvalidArgumentException('payload.posY can not be empty');
+        }
+
+        if (empty($payload['verify_code'])){
+            throw new \InvalidArgumentException('payload.verify_code can not be empty');
+        }
+    }
+
+    private function checkContractSignaturePayload($payload){
+        if (!is_array($payload)) {
+            throw new \InvalidArgumentException('payload can not be null');
+        }
+        if (empty($payload['signature_id'])){
+            throw new \InvalidArgumentException('payload.signature_id can not be empty');
+        }
+    }
+
+    private function checkContractVerifyCodePayload($payload){
+        if (!is_array($payload)) {
+            throw new \InvalidArgumentException('payload can not be null');
+        }
+        if (empty($payload['contract_id'])){
+            throw new \InvalidArgumentException('payload.contract_id can not be empty');
+        }
+        if (empty($payload['phone'])){
+            throw new \InvalidArgumentException('payload.phone can not be empty');
         }
     }
 
@@ -510,6 +696,7 @@ class BaoquanClient
      */
     private function throwServerException($request_id, $http_response) {
         $contents = json_decode($http_response->getBody()->getContents(), true);
+        print_r($contents);
         if (is_array($contents) &&
             isset($contents['message']) &&
             isset($contents['timestamp'])) {
