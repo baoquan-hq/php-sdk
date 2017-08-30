@@ -262,6 +262,31 @@ class BaoquanClient
     }
 
     /**
+     * show contract detail
+     * @param array $payload
+     * @throws ServerException
+     * @return array
+     */
+    public function contractDetail($payload){
+        $this->checkContractDetailPayload($payload);
+        return $this->json('contract/detail', $payload, null);
+    }
+
+    /**
+     * list contract
+     * @param array $payload
+     * @throws ServerException
+     * @return array
+     */
+    public function contractList($payload){
+        $this->checkContractListPayload($payload);
+        if (empty($payload)){
+            $payload = null;
+        }
+        return $this->json('contract/list', $payload, null);
+    }
+
+    /**
      * add factoids to attestation with attachments, one factoid can have more than one attachments
      * @param array $payload
      * @param array $attachments
@@ -489,6 +514,39 @@ class BaoquanClient
         }
     }
 
+    private function checkContractListPayload(&$payload){
+        if (empty($payload)) {
+            return;
+        }
+
+        if (!empty($payload['start'])){
+            $unixtime=strtotime($payload['start']) ? strtotime($payload['start']) : false;
+            if ($unixtime === false){
+                throw new \InvalidArgumentException('payload.start format error');
+            }
+
+            $payload['start'] = $unixtime*1000;
+        }
+
+        if (!empty($payload['end'])){
+            $unixtime=strtotime($payload['end']) ? strtotime($payload['end']) : false;
+            if ($unixtime === false){
+                throw new \InvalidArgumentException('payload.end format error');
+            }
+
+            $payload['end'] = $unixtime*1000;
+        }
+    }
+
+    private function checkContractDetailPayload($payload){
+        if (!is_array($payload)) {
+            throw new \InvalidArgumentException('payload can not be null');
+        }
+        if (empty($payload['contract_id'])){
+            throw new \InvalidArgumentException('payload.contract_id can not be empty');
+        }
+    }
+
     /**
      * @param array $payload
      * @param array $attachments
@@ -696,7 +754,6 @@ class BaoquanClient
      */
     private function throwServerException($request_id, $http_response) {
         $contents = json_decode($http_response->getBody()->getContents(), true);
-        print_r($contents);
         if (is_array($contents) &&
             isset($contents['message']) &&
             isset($contents['timestamp'])) {
