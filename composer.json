@@ -4,7 +4,7 @@
   "description": "sdk for members to use the service of baoquan.com ",
   "keywords": ["baoquan","sdk"],
   "homepage": "https://baoquan.com",
-  "license": "gpl-3.0",
+  "license": "gpl-3.0-or-later",
   "authors": [
     {
       "name": "lihao",
