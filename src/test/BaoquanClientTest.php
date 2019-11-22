@@ -12,17 +12,12 @@ use com\baoquan\sdk\BaoquanClient;
 use com\baoquan\sdk\exception\ServerException;
 use com\baoquan\sdk\util\Utils;
 use Faker\Factory;
+use PHPUnit\Framework\TestCase;
 
 $loader = require_once '../../vendor/autoload.php';
 $test_dir = dirname(__FILE__);
-$src_dir = dirname($test_dir);
-$main_path = $src_dir.'/main';
-$test_path = $test_dir;
-$loader->addPsr4('com\\baoquan\\sdk\\',[
-    $main_path, $test_path
-]);
 
-class BaoquanClientTest extends \PHPUnit_Framework_TestCase
+class BaoquanClientTest extends TestCase
 {
     /**
      * @var BaoquanClient
@@ -31,7 +26,7 @@ class BaoquanClientTest extends \PHPUnit_Framework_TestCase
 
     private $faker;
 
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->client = new BaoquanClient();
         $this->client->setHost('http://localhost:8080');
