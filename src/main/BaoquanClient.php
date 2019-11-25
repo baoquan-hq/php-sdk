@@ -693,6 +693,7 @@ class BaoquanClient
         // build post request
         $base_uri = sprintf('%s/api/%s/', $this->host, $this->version);
         $http_client = new Client([
+            'verify' => $GLOBALS['test_dir'].'/resources/cacert.pem',
             'base_uri' => $base_uri,
             'timeout' => 0,
             'http_errors' => false
@@ -742,7 +743,7 @@ class BaoquanClient
                 'multipart'=>$multipart
             ]);
         } catch (RequestException $e) {
-            throw new ClientException('http post failed, please check your host or network', $e);
+            throw new ClientException('http post failed, please check your host or network :'.$e);
         }
         return $http_response;
     }

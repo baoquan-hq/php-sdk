@@ -29,8 +29,8 @@ class BaoquanClientTest extends TestCase
     protected function setUp(): void
     {
         $this->client = new BaoquanClient();
-        $this->client->setHost('http://localhost:8080');
-        $this->client->setAccessKey('fsBswNzfECKZH9aWyh47fc');
+        $this->client->setHost('https://baoquan.com');
+        $this->client->setAccessKey('728Uy7JL3CompTTxApYYUk');
         $this->client->setPemPath($GLOBALS['test_dir'].'/resources/private_key_encoded.pem');
 
         $this->faker = Factory::create('zh_CN');
