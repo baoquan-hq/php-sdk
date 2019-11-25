@@ -89,7 +89,7 @@ class BaoquanClientTest extends TestCase
      */
     public function testCreateAttestation4() {
         $this->expectException(ServerException::class);
-        $this->expectExceptionMessage('模板不存在');
+        $this->expectExceptionMessage('');
         $this->client->createAttestation([
             'unique_id'=>$this->faker->uuid,
             'template_id'=>'2hSWTZ4oqVEJ',
