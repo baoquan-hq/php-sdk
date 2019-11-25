@@ -14,7 +14,6 @@ use com\baoquan\sdk\util\Utils;
 use Faker\Factory;
 use PHPUnit\Framework\TestCase;
 
-$loader = require_once '../../vendor/autoload.php';
 $test_dir = dirname(__FILE__);
 
 class BaoquanClientTest extends TestCase
