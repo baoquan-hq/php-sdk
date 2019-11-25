@@ -658,7 +658,7 @@ class BaoquanClient
             $header = $http_response->getHeader('Content-Disposition');
             $response = [];
             foreach($header as $value) {
-                if (preg_match('/.*filename="(.*)".*/', $value, $matches) === 1) {
+                if (preg_match('/.*filename=(.*).*/', $value, $matches) === 1) {
                     $response['file_name'] = $matches[1];
                     break;
                 }

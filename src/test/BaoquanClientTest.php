@@ -760,7 +760,7 @@ class BaoquanClientTest extends TestCase
     }
 
     public function testDownloadAttestation0() {
-        $response = $this->client->downloadAttestation('DB0C8DB14E3C44C7B9FBBE30EB179241');
+        $response = $this->client->downloadAttestation('25ECB5A38B584FBC8C63CE67D2043B80');
         $this->assertNotEmpty($response);
         $this->assertNotEmpty($response['file_name']);
         $this->assertNotEmpty($response['file']);
