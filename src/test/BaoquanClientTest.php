@@ -87,12 +87,12 @@ class BaoquanClientTest extends TestCase
     /**
      * template should be exist
      */
-    public function testCreateAttestation4() {
+        public function testCreateAttestation4() {
         $this->expectException(ServerException::class);
         $this->expectExceptionMessage('');
         $this->client->createAttestation([
             'unique_id'=>$this->faker->uuid,
-            'template_id'=>'2hSWTZ4oqVEJ',
+            'template_id'=>'fdg1YXWmgHTT8W9LGTLfhP',
             'identities'=>[
                 'ID'=>'42012319800127691X',
                 'MO'=>'15857112383',
@@ -122,7 +122,7 @@ class BaoquanClientTest extends TestCase
         $this->expectExceptionMessage('invalid data : user.phone_number required');
         $this->client->createAttestation([
             'unique_id'=>$this->faker->uuid,
-            'template_id'=>'2hSWTZ4oqVEJKAmK2RiyT4',
+            'template_id'=>'fdg1YXWmgHTT8W9LGTLfhP',
             'identities'=>[
                 'ID'=>'42012319800127691X',
                 'MO'=>'15857112383',
@@ -149,7 +149,7 @@ class BaoquanClientTest extends TestCase
         $this->expectExceptionMessage('invalid factoid type: product corresponding schema not exist');
         $this->client->createAttestation([
             'unique_id'=>$this->faker->uuid,
-            'template_id'=>'2hSWTZ4oqVEJKAmK2RiyT4',
+            'template_id'=>'fdg1YXWmgHTT8W9LGTLfhP',
             'identities'=>[
                 'ID'=>'42012319800127691X',
                 'MO'=>'15857112383',
@@ -199,7 +199,7 @@ class BaoquanClientTest extends TestCase
     public function testCreateAttestation8() {
         $response = $this->client->createAttestation([
             'unique_id'=>$this->faker->uuid,
-            'template_id'=>'2hSWTZ4oqVEJKAmK2RiyT4',
+            'template_id'=>'fdg1YXWmgHTT8W9LGTLfhP',
             'identities'=>[
                 'ID'=>'42012319800127691X',
                 'MO'=>'15857112383',
@@ -234,7 +234,7 @@ class BaoquanClientTest extends TestCase
     public function testCreateAttestation9() {
         $payload = [
             'unique_id'=>$this->faker->uuid,
-            'template_id'=>'2hSWTZ4oqVEJKAmK2RiyT4',
+            'template_id'=>'fdg1YXWmgHTT8W9LGTLfhP',
             'identities'=>[
                 'ID'=>'42012319800127691X',
                 'MO'=>'15857112383',
@@ -286,7 +286,7 @@ class BaoquanClientTest extends TestCase
         $this->expectException(ServerException::class);
         $this->expectExceptionMessage('保全不存在');
         $this->client->addFactoids([
-            'ano'=>'D58FFFD28A8949',
+            'ano'=>'25ECB5A38B584FBC8C63CE67D2043B80',
             'factoids'=>[
                 [
                     'unique_id'=>$this->faker->uuid,
@@ -327,7 +327,7 @@ class BaoquanClientTest extends TestCase
     public function testAddFactoids4() {
         $response = $this->client->createAttestation([
             'unique_id'=>$this->faker->uuid,
-            'template_id'=>'5Yhus2mVSMnQRXobRJCYgt',
+            'template_id'=>'fdg1YXWmgHTT8W9LGTLfhP',
             'identities'=>[
                 'ID'=>'42012319800127691X',
                 'MO'=>'15857112383',
@@ -372,7 +372,7 @@ class BaoquanClientTest extends TestCase
         $fuid = $this->faker->uuid;
         $response = $this->client->createAttestation([
             'unique_id'=>$this->faker->uuid,
-            'template_id'=>'5Yhus2mVSMnQRXobRJCYgt',
+            'template_id'=>'fdg1YXWmgHTT8W9LGTLfhP',
             'identities'=>[
                 'ID'=>'42012319800127691X',
                 'MO'=>'15857112383',
@@ -415,7 +415,7 @@ class BaoquanClientTest extends TestCase
     public function testAddFactoids6() {
         $response = $this->client->createAttestation([
             'unique_id'=>$this->faker->uuid,
-            'template_id'=>'5Yhus2mVSMnQRXobRJCYgt',
+            'template_id'=>'fdg1YXWmgHTT8W9LGTLfhP',
             'identities'=>[
                 'ID'=>'42012319800127691X',
                 'MO'=>'15857112383',
@@ -526,7 +526,7 @@ class BaoquanClientTest extends TestCase
     public function testSign0() {
         $response = $this->client->createAttestation([
             'unique_id'=>$this->faker->uuid,
-            'template_id'=>'2hSWTZ4oqVEJKAmK2RiyT4',
+            'template_id'=>'fdg1YXWmgHTT8W9LGTLfhP',
             'identities'=>[
                 'ID'=>'42012319800127691X',
                 'MO'=>'15857112383',
@@ -569,7 +569,7 @@ class BaoquanClientTest extends TestCase
     public function testSign1() {
         $response = $this->client->createAttestation([
             'unique_id'=>$this->faker->uuid,
-            'template_id'=>'2hSWTZ4oqVEJKAmK2RiyT4',
+            'template_id'=>'fdg1YXWmgHTT8W9LGTLfhP',
             'identities'=>[
                 'ID'=>'42012319800127691X',
                 'MO'=>'15857112383',
@@ -616,7 +616,7 @@ class BaoquanClientTest extends TestCase
     public function testSign2() {
         $response = $this->client->createAttestation([
             'unique_id'=>$this->faker->uuid,
-            'template_id'=>'5Yhus2mVSMnQRXobRJCYgt',
+            'template_id'=>'fdg1YXWmgHTT8W9LGTLfhP',
             'identities'=>[
                 'ID'=>'42012319800127691X',
                 'MO'=>'15857112383',
@@ -677,7 +677,7 @@ class BaoquanClientTest extends TestCase
     public function testSign3() {
         $response = $this->client->createAttestation([
             'unique_id'=>$this->faker->uuid,
-            'template_id'=>'5Yhus2mVSMnQRXobRJCYgt',
+            'template_id'=>'fdg1YXWmgHTT8W9LGTLfhP',
             'identities'=>[
                 'ID'=>'42012319800127691X',
                 'MO'=>'15857112383',
@@ -729,38 +729,38 @@ class BaoquanClientTest extends TestCase
     public function testGetAttestation0() {
         $this->expectException(ServerException::class);
         $this->expectExceptionMessage('保全不存在');
-        $this->client->getAttestation('DB0C8DB14E3C44');
+        $this->client->getAttestation('25ECB5A38B584FBC8C63CE67D2043B80');
     }
 
     public function testGetAttestation1() {
-        $response = $this->client->getAttestation('DB0C8DB14E3C44C7B9FBBE30EB179241');
+        $response = $this->client->getAttestation('25ECB5A38B584FBC8C63CE67D2043B80');
         $this->assertNotEmpty($response);
         $this->assertNotEmpty($response['data']);
-        $this->assertEquals('DB0C8DB14E3C44C7B9FBBE30EB179241', $response['data']['no']);
+        $this->assertEquals('25ECB5A38B584FBC8C63CE67D2043B80', $response['data']['no']);
     }
 
     public function testGetAttestation2() {
-        $response = $this->client->getAttestation('DB0C8DB14E3C44C7B9FBBE30EB179241', []);
+        $response = $this->client->getAttestation('25ECB5A38B584FBC8C63CE67D2043B80', []);
         $this->assertNotEmpty($response);
         $this->assertNotEmpty($response['data']);
-        $this->assertEquals('DB0C8DB14E3C44C7B9FBBE30EB179241', $response['data']['no']);
+        $this->assertEquals('25ECB5A38B584FBC8C63CE67D2043B80', $response['data']['no']);
         $this->assertEmpty($response['data']['identities']);
         $this->assertEmpty($response['data']['factoids']);
         $this->assertEmpty($response['data']['attachments']);
     }
 
     public function testGetAttestation3() {
-        $response = $this->client->getAttestation('DB0C8DB14E3C44C7B9FBBE30EB179241', ['factoids']);
+        $response = $this->client->getAttestation('25ECB5A38B584FBC8C63CE67D2043B80', ['factoids']);
         $this->assertNotEmpty($response);
         $this->assertNotEmpty($response['data']);
-        $this->assertEquals('DB0C8DB14E3C44C7B9FBBE30EB179241', $response['data']['no']);
+        $this->assertEquals('25ECB5A38B584FBC8C63CE67D2043B80', $response['data']['no']);
         $this->assertEmpty($response['data']['identities']);
         $this->assertNotEmpty($response['data']['factoids']);
         $this->assertEmpty($response['data']['attachments']);
     }
 
     public function testDownloadAttestation0() {
-        $response = $this->client->downloadAttestation('25ECB5A38B584FBC8C63CE67D2043B80');
+        $response = $this->client->downloadAttestation('8F1FA636F7AA44A58DD86845315C99F9');
         $this->assertNotEmpty($response);
         $this->assertNotEmpty($response['file_name']);
         $this->assertNotEmpty($response['file']);
