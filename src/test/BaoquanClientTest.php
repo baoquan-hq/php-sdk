@@ -89,7 +89,7 @@ class BaoquanClientTest extends TestCase
      */
         public function testCreateAttestation4() {
         $this->expectException(ServerException::class);
-        $this->expectExceptionMessage('');
+        $this->expectExceptionMessage('Template does not exist!');
         $this->client->createAttestation([
             'unique_id'=>$this->faker->uuid,
             'template_id'=>'fdg1YXWmgHTT8W9LGTLfhP',
