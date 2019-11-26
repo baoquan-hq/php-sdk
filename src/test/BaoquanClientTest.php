@@ -92,7 +92,7 @@ class BaoquanClientTest extends TestCase
         $this->expectExceptionMessage('Template does not exist!');
         $this->client->createAttestation([
             'unique_id'=>$this->faker->uuid,
-            'template_id'=>'fdg1YXWmgHTT8W9LGTLfhP',
+            'template_id'=>'fdg1YXWmgHTT',
             'identities'=>[
                 'ID'=>'42012319800127691X',
                 'MO'=>'15857112383',
@@ -122,7 +122,7 @@ class BaoquanClientTest extends TestCase
         $this->expectExceptionMessage('invalid data : user.phone_number required');
         $this->client->createAttestation([
             'unique_id'=>$this->faker->uuid,
-            'template_id'=>'fdg1YXWmgHTT8W9LGTLfhP',
+            'template_id'=>'gNPNetTs2maGVotukz7dJU',
             'identities'=>[
                 'ID'=>'42012319800127691X',
                 'MO'=>'15857112383',
