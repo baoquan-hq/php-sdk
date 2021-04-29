@@ -11,13 +11,20 @@ namespace com\baoquan\sdk\test;
 use com\baoquan\sdk\BaoquanClient;
 use com\baoquan\sdk\exception\ServerException;
 use com\baoquan\sdk\util\Utils;
+use Composer\Autoload\ClassLoader;
 use Faker\Factory;
-use PHPUnit\Framework\TestCase;
 
-$loader = require_once __DIR__ .'/../../vendor/autoload.php';
+require_once '../../vendor/autoload.php';
 $test_dir = dirname(__FILE__);
+$src_dir = dirname($test_dir);
+$main_path = $src_dir.'/main';
+$test_path = $test_dir;
+$loader = new ClassLoader();
+$loader->addPsr4('com\\baoquan\\sdk\\',[
+    $main_path, $test_path
+]);
 
-class BaoquanClientTest extends TestCase
+class BaoquanClientTest extends \PHPUnit_Framework_TestCase
 {
     /**
      * @var BaoquanClient
@@ -26,17 +33,18 @@ class BaoquanClientTest extends TestCase
 
     private $faker;
 
-    protected function setUp(): void
+    protected function setUp()
     {
         $this->client = new BaoquanClient();
-        $this->client->setHost('http://localhost:8080');
-        $this->client->setAccessKey('728Uy7JL3CompTTxApYYUk');
+        $this->client->setHost('http://local.ycpublic.com');
+        $this->client->setAccessKey('fsBswNzfECKZH9aWyh47fc');
         $this->client->setPemPath($GLOBALS['test_dir'].'/resources/private_key_encoded.pem');
 
         $this->faker = Factory::create('zh_CN');
     }
 
     /**
+     * @group CreateAttestation
      * payload.unique_id can not be empty
      */
     public function testCreateAttestation0() {
@@ -87,12 +95,12 @@ class BaoquanClientTest extends TestCase
     /**
      * template should be exist
      */
-        public function testCreateAttestation4() {
+    public function testCreateAttestation4() {
         $this->expectException(ServerException::class);
-        $this->expectExceptionMessage('Template does not exist!');
+        $this->expectExceptionMessage('模板不存在');
         $this->client->createAttestation([
             'unique_id'=>$this->faker->uuid,
-            'template_id'=>'fdg1YXWmgHTT',
+            'template_id'=>'2hSWTZ4oqVEJ',
             'identities'=>[
                 'ID'=>'42012319800127691X',
                 'MO'=>'15857112383',
@@ -122,7 +130,7 @@ class BaoquanClientTest extends TestCase
         $this->expectExceptionMessage('invalid data : user.phone_number required');
         $this->client->createAttestation([
             'unique_id'=>$this->faker->uuid,
-            'template_id'=>'gNPNetTs2maGVotukz7dJU',
+            'template_id'=>'2hSWTZ4oqVEJKAmK2RiyT4',
             'identities'=>[
                 'ID'=>'42012319800127691X',
                 'MO'=>'15857112383',
@@ -149,7 +157,7 @@ class BaoquanClientTest extends TestCase
         $this->expectExceptionMessage('invalid factoid type: product corresponding schema not exist');
         $this->client->createAttestation([
             'unique_id'=>$this->faker->uuid,
-            'template_id'=>'fdg1YXWmgHTT8W9LGTLfhP',
+            'template_id'=>'2hSWTZ4oqVEJKAmK2RiyT4',
             'identities'=>[
                 'ID'=>'42012319800127691X',
                 'MO'=>'15857112383',
@@ -199,7 +207,7 @@ class BaoquanClientTest extends TestCase
     public function testCreateAttestation8() {
         $response = $this->client->createAttestation([
             'unique_id'=>$this->faker->uuid,
-            'template_id'=>'fdg1YXWmgHTT8W9LGTLfhP',
+            'template_id'=>'2hSWTZ4oqVEJKAmK2RiyT4',
             'identities'=>[
                 'ID'=>'42012319800127691X',
                 'MO'=>'15857112383',
@@ -234,7 +242,7 @@ class BaoquanClientTest extends TestCase
     public function testCreateAttestation9() {
         $payload = [
             'unique_id'=>$this->faker->uuid,
-            'template_id'=>'fdg1YXWmgHTT8W9LGTLfhP',
+            'template_id'=>'2hSWTZ4oqVEJKAmK2RiyT4',
             'identities'=>[
                 'ID'=>'42012319800127691X',
                 'MO'=>'15857112383',
@@ -256,6 +264,543 @@ class BaoquanClientTest extends TestCase
         $response = $this->client->createAttestation($payload);
         $this->assertNotEmpty($response['data']['no']);
         $response1 = $this->client->createAttestation($payload);
+        $this->assertEquals($response['data']['no'], $response1['data']['no']);
+    }
+
+    /**
+     * @group CreateAttestationFile
+     * payload.unique_id can not be empty
+     */
+    public function testCreateAttestationFile0() {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('payload.unique_id can not be empty');
+        $this->client->createAttestationFile([]);
+    }
+
+    /**
+     * @group CreateAttestationFile
+     * payload.template_id can not be empty
+     */
+    public function testCreateAttestationFile1() {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('payload.template_id can not be empty');
+        $this->client->createAttestationFile([
+            'unique_id'=>$this->faker->uuid
+        ]);
+    }
+
+    /**
+     * @group CreateAttestationFile
+     * payload.identities can not be empty
+     */
+    public function testCreateAttestationFile2() {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('payload.identities can not be empty');
+        $this->client->createAttestationFile([
+            'unique_id'=>$this->faker->uuid,
+            'template_id'=>'2hSWTZ4oqVEJKAmK2RiyT4'
+        ]);
+    }
+
+    /**
+     * @group CreateAttestationFile
+     * payload.factoids can not be empty
+     */
+    public function testCreateAttestationFile3() {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('payload.factoids can not be empty');
+        $this->client->createAttestationFile([
+            'unique_id'=>$this->faker->uuid,
+            'template_id'=>'2hSWTZ4oqVEJKAmK2RiyT4',
+            'identities'=>[
+                'ID'=>'42012319800127691X',
+                'MO'=>'15857112383',
+            ]
+        ]);
+    }
+
+    /**
+     * @group CreateAttestationFile
+     * template should be exist
+     */
+    public function testCreateAttestationFile4() {
+        $this->expectException(ServerException::class);
+        $this->expectExceptionMessage('模板不存在');
+        $this->client->createAttestationFile([
+            'unique_id'=>$this->faker->uuid,
+            'template_id'=>'2hSWTZ4oqVEJ',
+            'identities'=>[
+                'ID'=>'42012319800127691X',
+                'MO'=>'15857112383',
+            ],
+            'factoids'=>[
+                [
+                    'unique_id'=>$this->faker->uuid,
+                    'type'=>'user',
+                    'data'=>[
+                        'name'=>'张三',
+                        'phone_number'=>'13234568732',
+                        'registered_at'=>'1466674609',
+                        'username'=>'tom'
+                    ]
+                ]
+            ]
+        ]);
+    }
+
+    /**
+     * @group CreateAttestationFile
+     * factoid data should meet with template schema
+     * when you edit template schemas on line and set user.phone_number is required
+     * you must give a valid phone_number value in user factoid
+     */
+    public function testCreateAttestationFile5() {
+        $this->expectException(ServerException::class);
+        $this->expectExceptionMessage('invalid data : user.phone_number required');
+        $this->client->createAttestationFile([
+            'unique_id'=>$this->faker->uuid,
+            'template_id'=>'2hSWTZ4oqVEJKAmK2RiyT4',
+            'identities'=>[
+                'ID'=>'42012319800127691X',
+                'MO'=>'15857112383',
+            ],
+            'factoids'=>[
+                [
+                    'unique_id'=>$this->faker->uuid,
+                    'type'=>'user',
+                    'data'=>[
+                        'name'=>'张三',
+                        'registered_at'=>'1466674609',
+                        'username'=>'tom'
+                    ]
+                ]
+            ]
+        ]);
+    }
+
+    /**
+     * @group CreateAttestationFile
+     * factoid data type should be in template schemas
+     */
+    public function testCreateAttestationFile6() {
+        $this->expectException(ServerException::class);
+        $this->expectExceptionMessage('invalid factoid type: product corresponding schema not exist');
+        $this->client->createAttestationFile([
+            'unique_id'=>$this->faker->uuid,
+            'template_id'=>'2hSWTZ4oqVEJKAmK2RiyT4',
+            'identities'=>[
+                'ID'=>'42012319800127691X',
+                'MO'=>'15857112383',
+            ],
+            'factoids'=>[
+                [
+                    'unique_id'=>$this->faker->uuid,
+                    'type'=>'product',
+                    'data'=>[
+                        'name'=>'浙金网',
+                        'description'=>'p2g理财平台',
+                    ]
+                ]
+            ],
+            'completed'=>false
+        ]);
+    }
+
+    /**
+     * @group CreateAttestationFile
+     * factoid data should meet with template schema
+     * when user.phone_number is required but you only upload product
+     * you must call addFactoids api to upload user later
+     */
+    public function testCreateAttestationFile7() {
+        $this->expectException(ServerException::class);
+        $this->expectExceptionMessage('invalid data : user.phone_number required');
+        $this->client->createAttestationFile([
+            'unique_id'=>$this->faker->uuid,
+            'template_id'=>'5Yhus2mVSMnQRXobRJCYgt',
+            'identities'=>[
+                'ID'=>'42012319800127691X',
+                'MO'=>'15857112383',
+            ],
+            'factoids'=>[
+                [
+                    'unique_id'=>$this->faker->uuid,
+                    'type'=>'product',
+                    'data'=>[
+                        'name'=>'浙金网',
+                        'description'=>'p2g理财平台',
+                    ]
+                ]
+            ]
+        ]);
+    }
+
+    /**
+     * @group CreateAttestationFile
+     * @throws ServerException
+     */
+    public function testCreateAttestationFile8() {
+        $response = $this->client->createAttestationFile([
+            'unique_id'=>$this->faker->uuid,
+            'template_id'=>'2hSWTZ4oqVEJKAmK2RiyT4',
+            'identities'=>[
+                'ID'=>'42012319800127691X',
+                'MO'=>'15857112383',
+            ],
+            'factoids'=>[
+                [
+                    'unique_id'=>$this->faker->uuid,
+                    'type'=>'user',
+                    'data'=>[
+                        'name'=>'张三',
+                        'phone_number'=>'13234568732',
+                        'registered_at'=>'1466674609',
+                        'username'=>'tom'
+                    ]
+                ]
+            ],
+            'completed'=>true
+        ], [
+            0=>[
+                [
+                    'resource'=>fopen(__DIR__.'/resources/contract.pdf', 'r'),
+                    'resource_name'=>'contract.pdf'
+                ]
+            ]
+        ]);
+        $this->assertNotEmpty($response['data']['no']);
+    }
+
+    /**
+     * @group CreateAttestationFile
+     * create attestation with the same unique id will return the same attestation no
+     */
+    public function testCreateAttestationFile9() {
+        $payload = [
+            'unique_id'=>$this->faker->uuid,
+            'template_id'=>'2hSWTZ4oqVEJKAmK2RiyT4',
+            'identities'=>[
+                'ID'=>'42012319800127691X',
+                'MO'=>'15857112383',
+            ],
+            'factoids'=>[
+                [
+                    'unique_id'=>$this->faker->uuid,
+                    'type'=>'user',
+                    'data'=>[
+                        'name'=>'张三',
+                        'phone_number'=>'13234568732',
+                        'registered_at'=>'1466674609',
+                        'username'=>'tom'
+                    ]
+                ]
+            ],
+            'completed'=>true
+        ];
+        $response = $this->client->createAttestationFile($payload);
+        $this->assertNotEmpty($response['data']['no']);
+        $response1 = $this->client->createAttestationFile($payload);
+        $this->assertEquals($response['data']['no'], $response1['data']['no']);
+    }
+
+    /**
+     * @group CreateAttestationURL
+     * payload.unique_id can not be empty
+     */
+    public function testCreateAttestationURL0() {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('payload.unique_id can not be empty');
+        $this->client->createAttestationURL([], 'http://www.baidu.com', 1);
+    }
+
+    /**
+     * @group CreateAttestationURL
+     * payload.template_id can not be empty
+     */
+    public function testCreateAttestationURL1() {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('payload.template_id can not be empty');
+        $this->client->createAttestationURL([
+            'unique_id'=>$this->faker->uuid
+        ], 'http://www.baidu.com', 1);
+    }
+
+    /**
+     * @group CreateAttestationURL
+     * payload.identities can not be empty
+     */
+    public function testCreateAttestationURL2() {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('payload.identities can not be empty');
+        $this->client->createAttestationURL([
+            'unique_id'=>$this->faker->uuid,
+            'template_id'=>'2hSWTZ4oqVEJKAmK2RiyT4'
+        ], 'http://www.baidu.com', 1);
+    }
+
+    /**
+     * @group CreateAttestationURL
+     * payload.factoids can not be empty
+     */
+    public function testCreateAttestationURL3() {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('payload.factoids can not be empty');
+        $this->client->createAttestationURL([
+            'unique_id'=>$this->faker->uuid,
+            'template_id'=>'2hSWTZ4oqVEJKAmK2RiyT4',
+            'identities'=>[
+                'ID'=>'42012319800127691X',
+                'MO'=>'15857112383',
+            ]
+        ], 'http://www.baidu.com', 1);
+    }
+
+    /**
+     * @group CreateAttestationURL
+     * template should be exist
+     */
+    public function testCreateAttestationURL4() {
+        $this->expectException(ServerException::class);
+        $this->expectExceptionMessage('payload.template_id is not exist');
+        $this->client->createAttestationURL([
+            'unique_id'=>$this->faker->uuid,
+            'template_id'=>'2hSWTZ4oqVEJ',
+            'identities'=>[
+                'ID'=>'42012319800127691X',
+                'MO'=>'15857112383',
+            ],
+            'factoids'=>[
+                [
+                    'unique_id'=>$this->faker->uuid,
+                    'type'=>'user',
+                    'data'=>[
+                        'name'=>'张三',
+                        'phone_number'=>'13234568732',
+                        'registered_at'=>'1466674609',
+                        'username'=>'tom'
+                    ]
+                ]
+            ]
+        ], 'http://www.baidu.com', 1);
+    }
+
+    /**
+     * @group CreateAttestationURL
+     * factoid data should meet with template schema
+     * when you edit template schemas on line and set user.phone_number is required
+     * you must give a valid phone_number value in user factoid
+     */
+    public function testCreateAttestationURL5() {
+        $this->expectException(ServerException::class);
+        $this->expectExceptionMessage('invalid data : user.phone_number required');
+        $this->client->createAttestationURL([
+            'unique_id'=>$this->faker->uuid,
+            'template_id'=>'2hSWTZ4oqVEJKAmK2RiyT4',
+            'identities'=>[
+                'ID'=>'42012319800127691X',
+                'MO'=>'15857112383',
+            ],
+            'factoids'=>[
+                [
+                    'unique_id'=>$this->faker->uuid,
+                    'type'=>'user',
+                    'data'=>[
+                        'name'=>'张三',
+                        'registered_at'=>'1466674609',
+                        'username'=>'tom'
+                    ]
+                ]
+            ]
+        ], 'http://www.baidu.com', 1);
+    }
+
+    /**
+     * @group CreateAttestationURL
+     * factoid data type should be in template schemas
+     */
+    public function testCreateAttestationURL6() {
+        $this->expectException(ServerException::class);
+        $this->expectExceptionMessage('invalid factoid type: product corresponding schema not exist');
+        $this->client->createAttestationURL([
+            'unique_id'=>$this->faker->uuid,
+            'template_id'=>'2hSWTZ4oqVEJKAmK2RiyT4',
+            'identities'=>[
+                'ID'=>'42012319800127691X',
+                'MO'=>'15857112383',
+            ],
+            'factoids'=>[
+                [
+                    'unique_id'=>$this->faker->uuid,
+                    'type'=>'product',
+                    'data'=>[
+                        'name'=>'浙金网',
+                        'description'=>'p2g理财平台',
+                    ]
+                ]
+            ],
+            'completed'=>false
+        ], 'http://www.baidu.com', 1);
+    }
+
+    /**
+     * @group CreateAttestationURL
+     * factoid data should meet with template schema
+     * when user.phone_number is required but you only upload product
+     * you must call addFactoids api to upload user later
+     */
+    public function testCreateAttestationURL7() {
+        $this->expectException(ServerException::class);
+        $this->expectExceptionMessage('invalid data : user.phone_number required');
+        $this->client->createAttestationURL([
+            'unique_id'=>$this->faker->uuid,
+            'template_id'=>'5Yhus2mVSMnQRXobRJCYgt',
+            'identities'=>[
+                'ID'=>'42012319800127691X',
+                'MO'=>'15857112383',
+            ],
+            'factoids'=>[
+                [
+                    'unique_id'=>$this->faker->uuid,
+                    'type'=>'product',
+                    'data'=>[
+                        'name'=>'浙金网',
+                        'description'=>'p2g理财平台',
+                    ]
+                ]
+            ]
+        ], 'http://www.baidu.com', 1);
+    }
+
+    /**
+     * @group CreateAttestationURL
+     */
+    public function testCreateAttestationURL8() {
+        $response = $this->client->createAttestationURL([
+            'unique_id'=>$this->faker->uuid,
+            'template_id'=>'2hSWTZ4oqVEJKAmK2RiyT4',
+            'identities'=>[
+                'ID'=>'42012319800127691X',
+                'MO'=>'15857112383',
+            ],
+            'factoids'=>[
+                [
+                    'unique_id'=>$this->faker->uuid,
+                    'type'=>'user',
+                    'data'=>[
+                        'name'=>'张三',
+                        'phone_number'=>'13234568732',
+                        'registered_at'=>'1466674609',
+                        'username'=>'tom'
+                    ]
+                ]
+            ],
+        ], 'http://www.baidu.com', 1);
+        $this->assertNotEmpty($response['data']['no']);
+    }
+
+    /**
+     * @group CreateAttestationURL
+     * create attestation with the same unique id will return the same attestation no
+     */
+    public function testCreateAttestationURL9() {
+        $payload = [
+            'unique_id'=>$this->faker->uuid,
+            'template_id'=>'2hSWTZ4oqVEJKAmK2RiyT4',
+            'identities'=>[
+                'ID'=>'42012319800127691X',
+                'MO'=>'15857112383',
+            ],
+            'factoids'=>[
+                [
+                    'unique_id'=>$this->faker->uuid,
+                    'type'=>'user',
+                    'data'=>[
+                        'name'=>'张三',
+                        'phone_number'=>'13234568732',
+                        'registered_at'=>'1466674609',
+                        'username'=>'tom'
+                    ]
+                ]
+            ]
+        ];
+        $response = $this->client->createAttestationURL($payload,'http://www.baidu.com', 1);
+        $this->assertNotEmpty($response['data']['no']);
+        $response1 = $this->client->createAttestationURL($payload, 'http://www.baidu.com', 1);
+        $this->assertEquals($response['data']['no'], $response1['data']['no']);
+    }
+
+    /**
+     * @group CreateAttestationURL
+     * payload.url can not be empty
+     */
+    public function testCreateAttestationURL10() {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('payload.url should not be null');
+        $this->client->createAttestationURL([
+            'unique_id'=>$this->faker->uuid
+        ], '', 1);
+    }
+
+    /**
+     * @group CreateAttestationURL
+     * payload.url can not be empty
+     */
+    public function testCreateAttestationURL11() {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('payload.mode should not be null');
+        $this->client->createAttestationURL([
+            'unique_id'=>$this->faker->uuid
+        ], 'http://www.baidu.com', '');
+    }
+
+    /**
+     * @group WebStep2
+     */
+    public function testWebStep2zero() {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('payload.no should not be array');
+        $this->client->webStep2('');
+    }
+
+    /**
+     * @group WebStep2
+     */
+    public function testWebStep2one() {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('payload.no should not be null');
+        $this->client->webStep2([]);
+    }
+
+    /**
+     * @group WebPreview
+     */
+    public function testWebPreview0() {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('payload.no should not be null');
+        $this->client->webPreview([]);
+    }
+
+    /**
+     * @group WebPreview
+     */
+    public function testWebPreview1() {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('payload.imgBase should not be null');
+        $this->client->webPreview([
+            'no' => '588746960740425728'
+        ]);
+    }
+
+    /**
+     * @group WebInfo
+     * @throws ServerException
+     */
+    public function testWebInfo()
+    {
+        $payload = ['no' => '588746960740425728'];
+        $response = $this->client->webInfo($payload);
+        $this->assertNotEmpty($response['data']['no']);
+        $response1 = $this->client->webInfo($payload);
         $this->assertEquals($response['data']['no'], $response1['data']['no']);
     }
 
@@ -286,7 +831,7 @@ class BaoquanClientTest extends TestCase
         $this->expectException(ServerException::class);
         $this->expectExceptionMessage('保全不存在');
         $this->client->addFactoids([
-            'ano'=>'25ECB5A38B584FBC8C63CE67D2043B80',
+            'ano'=>'D58FFFD28A8949',
             'factoids'=>[
                 [
                     'unique_id'=>$this->faker->uuid,
@@ -327,7 +872,7 @@ class BaoquanClientTest extends TestCase
     public function testAddFactoids4() {
         $response = $this->client->createAttestation([
             'unique_id'=>$this->faker->uuid,
-            'template_id'=>'fdg1YXWmgHTT8W9LGTLfhP',
+            'template_id'=>'5Yhus2mVSMnQRXobRJCYgt',
             'identities'=>[
                 'ID'=>'42012319800127691X',
                 'MO'=>'15857112383',
@@ -372,7 +917,7 @@ class BaoquanClientTest extends TestCase
         $fuid = $this->faker->uuid;
         $response = $this->client->createAttestation([
             'unique_id'=>$this->faker->uuid,
-            'template_id'=>'fdg1YXWmgHTT8W9LGTLfhP',
+            'template_id'=>'5Yhus2mVSMnQRXobRJCYgt',
             'identities'=>[
                 'ID'=>'42012319800127691X',
                 'MO'=>'15857112383',
@@ -415,7 +960,7 @@ class BaoquanClientTest extends TestCase
     public function testAddFactoids6() {
         $response = $this->client->createAttestation([
             'unique_id'=>$this->faker->uuid,
-            'template_id'=>'fdg1YXWmgHTT8W9LGTLfhP',
+            'template_id'=>'5Yhus2mVSMnQRXobRJCYgt',
             'identities'=>[
                 'ID'=>'42012319800127691X',
                 'MO'=>'15857112383',
@@ -526,7 +1071,7 @@ class BaoquanClientTest extends TestCase
     public function testSign0() {
         $response = $this->client->createAttestation([
             'unique_id'=>$this->faker->uuid,
-            'template_id'=>'fdg1YXWmgHTT8W9LGTLfhP',
+            'template_id'=>'2hSWTZ4oqVEJKAmK2RiyT4',
             'identities'=>[
                 'ID'=>'42012319800127691X',
                 'MO'=>'15857112383',
@@ -569,7 +1114,7 @@ class BaoquanClientTest extends TestCase
     public function testSign1() {
         $response = $this->client->createAttestation([
             'unique_id'=>$this->faker->uuid,
-            'template_id'=>'fdg1YXWmgHTT8W9LGTLfhP',
+            'template_id'=>'2hSWTZ4oqVEJKAmK2RiyT4',
             'identities'=>[
                 'ID'=>'42012319800127691X',
                 'MO'=>'15857112383',
@@ -616,7 +1161,7 @@ class BaoquanClientTest extends TestCase
     public function testSign2() {
         $response = $this->client->createAttestation([
             'unique_id'=>$this->faker->uuid,
-            'template_id'=>'fdg1YXWmgHTT8W9LGTLfhP',
+            'template_id'=>'5Yhus2mVSMnQRXobRJCYgt',
             'identities'=>[
                 'ID'=>'42012319800127691X',
                 'MO'=>'15857112383',
@@ -677,7 +1222,7 @@ class BaoquanClientTest extends TestCase
     public function testSign3() {
         $response = $this->client->createAttestation([
             'unique_id'=>$this->faker->uuid,
-            'template_id'=>'fdg1YXWmgHTT8W9LGTLfhP',
+            'template_id'=>'5Yhus2mVSMnQRXobRJCYgt',
             'identities'=>[
                 'ID'=>'42012319800127691X',
                 'MO'=>'15857112383',
@@ -729,38 +1274,38 @@ class BaoquanClientTest extends TestCase
     public function testGetAttestation0() {
         $this->expectException(ServerException::class);
         $this->expectExceptionMessage('保全不存在');
-        $this->client->getAttestation('25ECB5A38B584FBC8C63CE67D2043B80');
+        $this->client->getAttestation('DB0C8DB14E3C44');
     }
 
     public function testGetAttestation1() {
-        $response = $this->client->getAttestation('25ECB5A38B584FBC8C63CE67D2043B80');
+        $response = $this->client->getAttestation('DB0C8DB14E3C44C7B9FBBE30EB179241');
         $this->assertNotEmpty($response);
         $this->assertNotEmpty($response['data']);
-        $this->assertEquals('25ECB5A38B584FBC8C63CE67D2043B80', $response['data']['no']);
+        $this->assertEquals('DB0C8DB14E3C44C7B9FBBE30EB179241', $response['data']['no']);
     }
 
     public function testGetAttestation2() {
-        $response = $this->client->getAttestation('25ECB5A38B584FBC8C63CE67D2043B80', []);
+        $response = $this->client->getAttestation('DB0C8DB14E3C44C7B9FBBE30EB179241', []);
         $this->assertNotEmpty($response);
         $this->assertNotEmpty($response['data']);
-        $this->assertEquals('25ECB5A38B584FBC8C63CE67D2043B80', $response['data']['no']);
+        $this->assertEquals('DB0C8DB14E3C44C7B9FBBE30EB179241', $response['data']['no']);
         $this->assertEmpty($response['data']['identities']);
         $this->assertEmpty($response['data']['factoids']);
         $this->assertEmpty($response['data']['attachments']);
     }
 
     public function testGetAttestation3() {
-        $response = $this->client->getAttestation('25ECB5A38B584FBC8C63CE67D2043B80', ['factoids']);
+        $response = $this->client->getAttestation('DB0C8DB14E3C44C7B9FBBE30EB179241', ['factoids']);
         $this->assertNotEmpty($response);
         $this->assertNotEmpty($response['data']);
-        $this->assertEquals('25ECB5A38B584FBC8C63CE67D2043B80', $response['data']['no']);
+        $this->assertEquals('DB0C8DB14E3C44C7B9FBBE30EB179241', $response['data']['no']);
         $this->assertEmpty($response['data']['identities']);
         $this->assertNotEmpty($response['data']['factoids']);
         $this->assertEmpty($response['data']['attachments']);
     }
 
     public function testDownloadAttestation0() {
-        $response = $this->client->downloadAttestation('8F1FA636F7AA44A58DD86845315C99F9');
+        $response = $this->client->downloadAttestation('DB0C8DB14E3C44C7B9FBBE30EB179241');
         $this->assertNotEmpty($response);
         $this->assertNotEmpty($response['file_name']);
         $this->assertNotEmpty($response['file']);

@@ -1,8 +1,8 @@
 <?php
 /**
  * Created by PhpStorm.
- * User: sbwdlihao
- * Date: 6/22/16
+ * User: liuyangyang
+ * Date: 4/28/21
  * Time: 9:49 AM
  */
 
@@ -17,9 +17,9 @@ use GuzzleHttp\Exception\RequestException;
 
 class BaoquanClient
 {
-    private $host = 'https://baoquan.com';
+    private $host = 'https://api.baoquan.com';
 
-    private $version = 'v1';
+    private $version = 'v3';
 
     private $access_key;
 
@@ -126,20 +126,31 @@ class BaoquanClient
     }
 
     /**
-     * create attestation with attachments, one factoid can have more than one attachments
+     * create attestation with text
      * @param array $payload
-     * @param array $attachments
      * @throws ServerException
      * @return array
      */
-    public function createAttestation($payload, $attachments = null) {
+    public function createAttestation($payload) {
+        $this->checkCreateAttestationPayload($payload);
+        return $this->json('attestations/text', $payload, null);
+    }
+
+    /**
+     * create attestation with attachments, one factoid can have more than one attachments
+     * @param $payload
+     * @param null $attachments
+     * @return array
+     * @throws ServerException
+     */
+    public function createAttestationFile($payload, $attachments = null) {
         $this->checkCreateAttestationPayload($payload);
         $stream_body_map = $this->buildStreamBodyMap($attachments);
         $payload['attachments'] = $this->buildChecksum($payload, $attachments);
-        return $this->json('attestations', $payload, $stream_body_map);
+        return $this->json('attestations/file', $payload, $stream_body_map);
     }
 
-     /**
+    /**
      * create attestation with hash
      * @param array $payload
      * @param string $hash
@@ -155,18 +166,22 @@ class BaoquanClient
         return $this->json('attestations/hash', $payload, null);
     }
 
-     /**
-     * create attestation with url
-     * @param array $payload
-     * @param string $url
-     * @throws ServerException
+    /**
+     * @param $payload
+     * @param $url
+     * @param $mode
      * @return array
+     * @throws ServerException
      */
-    public function createAttestationURL($payload, $url) {
+    public function createAttestationURL($payload, $url, $mode) {
         if (is_null($url)) {
             throw new \InvalidArgumentException('url should not be null');
         }
+        if (is_null($mode)) {
+            throw new \InvalidArgumentException('mode should not be null');
+        }
         $payload['url'] = $url;
+        $payload['mode'] = $mode;
         $this->checkCreateAttestationPayload($payload);
         return $this->json('attestations/url', $payload, null);
     }
@@ -626,6 +641,110 @@ class BaoquanClient
         return $multipart_files;
     }
 
+    public function usersKyc($payload)
+    {
+        return $this->json('users/kyc', $payload);
+    }
+    public function orgKyc($payload,$attachments)
+    {
+        return $this->jsonOrgKyc('notary/organizations/kyc', $payload,$attachments);
+    }
+    /*证书模版*/
+    public function contractView($payload){
+        return $this->json('attestations', $payload, null);
+    }
+    /*下载合同*/
+    public function contractDownload($contractId) {
+        $payload['contract_id'] = $contractId;
+        return $this->file('notary/contract/download', $payload);
+    }
+
+    /**
+     * @param $payload
+     * @return array
+     * @throws ServerException
+     * 获取取证token
+     */
+    public function getToken($payload) {
+        $this->checkCreateAttestationPayload($payload);
+        return $this->json('process/token', $payload, null);
+    }
+
+    /*个人证书模版*/
+    public function contractProView($payload){
+        return $this->json('attestations', $payload, null);
+    }
+
+    /*个人证书网页取证模版*/
+    public function contractWebView($payload){
+        return $this->json('attestations/pdf/html', $payload, null);
+    }
+
+    /**下载过程取证压缩包*/
+    public function download($payload){
+        return $this->json('attestations/download', $payload, null,'1');
+    }
+    /**下载网页取证pdf*/
+    public function webDownload($payload){
+        return $this->json('attestations/pdf', $payload, null);
+    }
+    /**网页取证获取保全号码*/
+    public function webScreenshot($payload){
+        return $this->json('attestations/url', $payload, null);
+    }
+    /**网页取证获取截图*/
+    public function webPreview($payload){
+        if (!is_array($payload)) {
+            throw new \InvalidArgumentException('payload should be array');
+        }
+        if (is_null($payload['no'])) {
+            throw new \InvalidArgumentException('payload.no can not be null');
+        }
+        if (is_null($payload['imgBase'])) {
+            throw new \InvalidArgumentException('payload.imgBase can not be null');
+        }
+        return $this->json('attestations/url/img', $payload, null);
+    }
+
+    /**
+     * 网页取证详情查询
+     * @param $payload
+     * @return array
+     * @throws ServerException
+     */
+    public function webInfo($payload) {
+        if (is_null($payload['no'])) {
+            throw new \InvalidArgumentException('payload.no can not be null');
+        }
+
+        return $this->json('attestations/url/info', $payload, null);
+    }
+
+    /**网页取证上链*/
+    public function webStep2($payload){
+        if (!is_array($payload)) {
+            throw new \InvalidArgumentException('payload should be array');
+        }
+        if (is_null($payload['no'])) {
+            throw new \InvalidArgumentException('payload.no can not be null');
+        }
+        return $this->json('attestations/url/confirm', $payload, null);
+    }
+
+    /*过程取证详情*/
+    public function evidenceStatus($payload){
+        return $this->json('process/info', $payload, null);
+    }
+
+    /*结束过程取证*/
+    public function endEvidenceStatus($payload){
+        return $this->json('process/stop', $payload, null);
+    }
+    /**取消过程取证*/
+    public function cancelNotice($payload){
+        return $this->json('process/cancel', $payload, null);
+    }
+
     /**
      * @param string $api_name
      * @param array $payload
@@ -633,9 +752,32 @@ class BaoquanClient
      * @throws ServerException
      * @return array
      */
-    private function json($api_name, $payload, $attachments=null) {
+    private function json($api_name, $payload, $attachments=null,$status=0) {
         $request_id = $this->request_id_generator->createRequestId();
         $http_response = $this->post($request_id, $api_name, $payload, $attachments);
+        if ($http_response->getStatusCode() != 200) {
+            $this->throwServerException($request_id, $http_response);
+        } else {
+            if($status==1){
+                $header = $http_response->getHeader('Content-Disposition');
+                $response = [];
+                foreach($header as $value) {
+                    if (preg_match('/.*filename=(.*).*/', $value, $matches) === 1) {
+                        $response['file_name'] = $matches[1];
+                        break;
+                    }
+                }
+                $response['file'] = $http_response->getBody();
+                return $response;
+            }else{
+                return json_decode($http_response->getBody()->getContents(), true);
+            }
+        }
+    }
+
+    private function jsonOrgKyc($api_name, $payload, $attachments=null) {
+        $request_id = $this->request_id_generator->createRequestId();
+        $http_response = $this->postOrgKyc($request_id, $api_name, $payload, $attachments);
         if ($http_response->getStatusCode() != 200) {
             $this->throwServerException($request_id, $http_response);
         } else {
@@ -658,11 +800,15 @@ class BaoquanClient
             $header = $http_response->getHeader('Content-Disposition');
             $response = [];
             foreach($header as $value) {
-                if (preg_match('/.*filename=(.*).*/', $value, $matches) === 1) {
+                //"form-data; name="inline"; filename="2mee26ryDttqdYEgqVG2mP.pdf""
+                //"attachment; filename=3CA6B2C0643A4250936BF65EE39B966C.zip"
+                $value = str_replace('"','',$value);
+                if (preg_match('/.*filename=(.*)/', $value, $matches) === 1) {
                     $response['file_name'] = $matches[1];
                     break;
                 }
-            }$response['file'] = $http_response->getBody();
+            }
+            $response['file'] = $http_response->getBody();
             return $response;
         }
     }
@@ -693,10 +839,10 @@ class BaoquanClient
         // build post request
         $base_uri = sprintf('%s/api/%s/', $this->host, $this->version);
         $http_client = new Client([
-            'verify' => $GLOBALS['test_dir'].'/resources/cacert.pem',
             'base_uri' => $base_uri,
-            'timeout' => 0,
-            'http_errors' => false
+            'timeout' => 7200,
+            'http_errors' => false,
+            'verify'=>false,
         ]);
         $multipart = [
             [
@@ -740,10 +886,89 @@ class BaoquanClient
         $http_response = null;
         try {
             $http_response = $http_client->post($api_name, [
+                'multipart'=>$multipart,
+                'timeout' =>72000,
+                'connect_timeout'=>72000
+            ]);
+        } catch (RequestException $e) {
+            throw new ClientException('http post failed, please check your host or network', $e);
+        }
+        return $http_response;
+    }
+
+    /**
+     * @param $request_id
+     * @param $api_name
+     * @param $payload
+     * @param $attachments
+     * @return \Psr\Http\Message\ResponseInterface
+     */
+    private function postOrgKyc($request_id, $api_name, $payload, $attachments=null) {
+        $path = sprintf('/api/%s/%s', $this->version, $api_name);
+        if (empty($request_id)) {
+            throw new ClientException('request id can not be empty');
+        }
+        if (empty($this->access_key)) {
+            throw new ClientException('accessKey can not be empty');
+        }
+        $tonce = time();
+        $payloadString = json_encode($payload);
+        if (is_null($payloadString)) {
+            throw new ClientException('convert payload object to json string failed');
+        }
+        // build the data to sign
+        $data = 'POST'.$path.$request_id.$this->access_key.$tonce.$payloadString;
+        $signature = Utils::sign($this->private_key_data, $data);
+        // build post request
+        $base_uri = sprintf('%s/api/%s/', $this->host, $this->version);
+
+        $http_client = new Client([
+            'base_uri' => $base_uri,
+            'timeout' => 0,
+            'http_errors' => false,
+            'verify'=>false,
+        ]);
+        $multipart = [
+            [
+                'name'=>'request_id',
+                'contents'=>$request_id
+            ],
+            [
+                'name'=>'access_key',
+                'contents'=>$this->access_key
+            ],
+            [
+                'name'=>'tonce',
+                'contents'=>$tonce
+            ],
+            [
+                'name'=>'payload',
+                'contents'=>$payloadString,
+                'headers'=>[
+                    'charset'=>'utf-8' // avoid chinese garbled
+                ]
+            ],
+            [
+                'name'=>'signature',
+                'contents'=>$signature
+            ],
+        ];
+        if (!empty($attachments)) {
+            $multipart[] = [
+                'name'=>'businessFile',
+                'contents'=>$attachments['resource'],
+                'headers'=>[
+                    'charset'=>'utf-8' // avoid chinese garbled
+                ]
+            ];
+        }
+        $http_response = null;
+        try {
+            $http_response = $http_client->post($api_name, [
                 'multipart'=>$multipart
             ]);
         } catch (RequestException $e) {
-            throw new ClientException('http post failed, please check your host or network :'.$e);
+            throw new ClientException('http post failed, please check your host or network', $e);
         }
         return $http_response;
     }
